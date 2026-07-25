@@ -5,8 +5,20 @@
 
 Built to replace spreadsheet-based inventory tracking with a searchable, transaction-safe web interface.
 
-<!-- 📸 Add a screenshot or short demo GIF here -->
-<!-- ![screenshot](./docs/screenshot.png) -->
+### Dashboard
+![Dashboard](./docs/DAM2.png)
+
+### DC-wise Stock Status
+![DC-wise Stock Status](./docs/DAM4.png)
+
+### Monthly Batch Inspection
+![Monthly Batch Inspection](./docs/DAM3.png)
+
+### Login
+![Login](./docs/login.png)
+
+### Sign Up
+![Sign Up](./docs/signup.png)
 
 ---
 
