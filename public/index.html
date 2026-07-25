@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Asset Manager - 로그인</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #1e293b;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            border-radius: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 🔑 메인 로그인 카드 -->
+    <div class="card shadow-lg border-0 login-card p-4">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="bi bi-box-seam text-primary display-4"></i>
+                <h3 class="fw-bold text-dark mt-2">DC Asset Manager</h3>
+                <p class="text-muted small">데이터센터 자산 관리 시스템</p>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <form action="/login" method="POST" id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary">아이디</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" name="id" id="loginIdInput" class="form-control" placeholder="아이디를 입력하세요" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-secondary">비밀번호</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="비밀번호를 입력하세요" required>
+                    </div>
+                </div>
+
+                <!-- 🌟 아이디 저장 체크박스 (위치 및 간격 정돈) -->
+                <div class="form-check mb-4 ms-1">
+                    <input class="form-check-input" type="checkbox" id="rememberIdCheck">
+                    <label class="form-check-label small text-secondary fw-bold" for="rememberIdCheck">
+                        아이디 저장
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-3">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> 로그인
+                </button>
+            </form>
+
+            <hr class="my-3">
+
+            <div class="text-center">
+                <small class="text-muted me-2">아직 계정이 없으신가요?</small>
+                <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold" data-bs-toggle="modal" data-bs-target="#signupModal">
+                    회원가입
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 회원가입 모달 팝업 -->
+    <div class="modal fade" id="signupModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>회원가입</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="signupForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">아이디</label>
+                            <input type="text" id="signupId" class="form-control" placeholder="아이디 입력" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">비밀번호</label>
+                            <input type="password" id="signupPw" class="form-control" placeholder="비밀번호 입력" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">비밀번호 확인</label>
+                            <input type="password" id="signupConfirmPw" class="form-control" placeholder="비밀번호 재입력" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary fw-bold" id="submitSignupBtn">가입완료</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 🌟 아이디 저장 (LocalStorage 연동)
+        const loginIdInput = document.getElementById("loginIdInput");
+        const rememberIdCheck = document.getElementById("rememberIdCheck");
+        const loginForm = document.getElementById("loginForm");
+
+        // 1) 저장된 아이디 불러오기
+        const savedId = localStorage.getItem("savedUserId");
+        if (savedId) {
+            loginIdInput.value = savedId;
+            rememberIdCheck.checked = true;
+        }
+
+        // 2) 로그인 제출 시 저장
+        if (loginForm) {
+            loginForm.addEventListener("submit", () => {
+                if (rememberIdCheck.checked) {
+                    localStorage.setItem("savedUserId", loginIdInput.value);
+                } else {
+                    localStorage.removeItem("savedUserId");
+                }
+            });
+        }
+
+        // 3) 회원가입 모달 전송
+        document.getElementById("submitSignupBtn").addEventListener("click", async () => {
+            const id = document.getElementById("signupId").value;
+            const password = document.getElementById("signupPw").value;
+            const confirmpassword = document.getElementById("signupConfirmPw").value;
+
+            try {
+                const res = await fetch("/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, password, confirmpassword })
+                });
+
+                const result = await res.json();
+
+                if (res.ok && result.success) {
+                    alert("🎉 회원가입 완료! 바로 로그인해보세요.");
+
+                    const modalEl = document.getElementById('signupModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
+
+                    document.getElementById("loginIdInput").value = id;
+                    document.getElementById("signupForm").reset();
+                } else {
+                    alert(result.error || "회원가입에 실패했습니다.");
+                }
+            } catch (err) {
+                console.error("회원가입 에러:", err);
+                alert("서버와 통신 중 오류가 발생했습니다.");
+            }
+        });
+    </script>
+</body>
+
+</html>

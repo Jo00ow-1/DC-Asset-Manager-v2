@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Asset Manager - 메인 대시보드</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .location-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .location-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+            border-color: #0d6efd;
+        }
+
+        .main-navbar {
+            background-color: #1e293b;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark main-navbar sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/dashboard">
+                <i class="bi bi-box-seam me-2"></i>DC Asset Manager
+            </a>
+            <div class="d-flex align-items-center">
+                <a href="/logout" class="btn btn-outline-danger btn-sm">로그아웃</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-dark"> IDC를 선택해주세요.</h2>
+            <p class="text-muted">해당 센터의 카테고리별 자산 재고 조회 및 수정이 가능합니다.</p>
+        </div>
+
+        <!-- JS가 지점 카드들을 채워 넣을 영역 -->
+        <div class="row g-4 justify-content-center mb-5" id="locationCards"></div>
+
+        <hr class="my-5">
+        <!-- 월간 실사 현황 카드 -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-clipboard-check me-2 text-primary"></i>
+                    <span id="inspectionTitle">정기 자산 실사 현황</span>
+                </h5>
+                <small class="text-muted">매월 1일 자동 갱신</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>IDC 센터</th>
+                                <th>실사 상태</th>
+                                <th>최종 완료일</th>
+                                <th>실사 담당자</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inspectionTableBody">
+                            <tr>
+                                <td colspan="5" class="py-4 text-muted">실사 현황을 불러오는 중 ...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2 text-secondary"></i>최근 자산 입출고 기록
+                </h5>
+            </div>
+            <!-- 이력 id="historyContainer"-->
+            <div class="card-body p-0" id="historyContainer" style="max-height: 420px; overflow-y: auto;">
+                <div class="text-center p-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>이력을 불러오는 중 ...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 일괄 자산 실사 팝업 모달 -->
+    <div class="modal fade" id="inspectionModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="inspectionModalTitle">📋 IDC 자산 실사</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="row g-0" style="min-height: 480px;">
+                        <!-- 좌측: 카테고리 고르는 메뉴 -->
+                        <div class="col-md-3 bg-light border-end p-3">
+                            <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-list-task me-1"></i>카테고리 선택</h6>
+                            <div class="list-group" id="inspectionCategoryList">
+                                <button class="list-group-item list-group-item-action active"
+                                    onclick="selectInspectionCategory('HDD')">HDD</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('SSD')">SSD</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('NVMe')">NVMe</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('메모리')">메모리</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('DAC')">DAC</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('10G NIC')">10G NIC</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('파워케이블')">파워케이블</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('UTP케이블')">UTP케이블</button>
+                                <button class="list-group-item list-group-item-action"
+                                    onclick="selectInspectionCategory('IPMI케이블')">IPMI케이블</button>
+                            </div>
+                        </div>
+
+                        <!-- 우측: 품명 및 실사 수량 입력 표 -->
+                        <div class="col-md-9 p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold m-0" id="inspectionCategoryTitle">HDD 목록</h5>
+                                <small class="text-muted">수량 변경 시 자동으로 반영 준비됩니다.</small>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>제조사</th>
+                                            <th>품명 (스펙)</th>
+                                            <th>현재 수량</th>
+                                            <th style="width: 25%;">실사 입력 수량</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inspectionItemsTable">
+                                        <tr>
+                                            <td colspan="4" class="py-4 text-muted">카테고리를 선택하세요.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light" style="padding-right: 80px;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-success fw-bold px-4" id="saveBatchInspectionBtn">💾
+                        완료</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 지점 카드 렌더링 스크립트
+        const colorMap = {
+            "판교": "text-primary",
+            "안양": "text-success",
+            "안산": "text-warning",
+            "하남": "text-info"
+        };
+
+        fetch("/api/locations")
+            .then(res => res.json())
+            .then(locations => {
+                const container = document.getElementById("locationCards");
+
+                locations.forEach(loc => {
+                    const col = document.createElement("div");
+                    col.className = "col-md-3";
+                    col.innerHTML = `
+                        <div class="card h-100 shadow-sm border-0 text-center p-4 location-card">
+                            <div class="card-body">
+                                <i class="bi bi-geo-alt-fill fs-1 mb-3 ${colorMap[loc.name] ?? 'text-secondary'}"></i>
+                                <h4 class="card-title fw-bold">${loc.name}</h4>
+                                <p class="card-text text-muted small">IDC Center</p>
+                            </div>
+                        </div>
+                    `;
+                    col.querySelector(".location-card").addEventListener("click", () => {
+                        window.location.href = `/location/${loc.name}`;
+                    });
+                    container.appendChild(col);
+                });
+            })
+            .catch(err => console.error("지점 로드 실패:", err));
+
+        // 실사 현황 불러오기
+        function loadInspectionStatus() {
+            fetch("/api/inspections/status")
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        //년, 월 텍스트 분리해서 타이틀에넣기
+                        const [year, month] = result.yearMonth.split('-');
+                        document.getElementById("inspectionTitle").textContent = `📋 ${year}년 ${parseInt(month)}월 정기 자산 실사 현황`;
+
+                        const tbody = document.getElementById("inspectionTableBody");
+                        tbody.innerHTML = '';
+
+                        result.data.forEach(item => {
+                            const isDone = item.is_completed;
+                            const statusBadge = isDone
+                                ? '<span class="badge bg-success"><i class ="bi bi-check-circle me-1"></i>완료</span>'
+                                : '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>미완료</span>';
+
+                            const dateStr = item.completed_at ? new Date(item.completed_at).toLocaleString('ko-KR') : '-';
+                            const userStr = item.completed_by ? item.completed_by : '-';
+
+                            // 버튼 분기 (완료되어있으면 '취소' 버튼, 안되어있으면 '완료하기' 버튼)
+                            const buttonHtml = isDone
+                                ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="openInspectionModal('${item.location_name}')">실사 재점검</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="toggleInspection(${item.location_id}, false)">완료 취소</button>`
+                                : `<button class="btn btn-sm btn-primary fw-bold" onclick="openInspectionModal('${item.location_name}')">📋 실사하기</button>`;
+
+                            tbody.innerHTML += `
+                        <tr>
+                            <td class="fw-bold">${item.location_name} IDC</td>
+                            <td>${statusBadge}</td>
+                            <td class="text-muted small">${dateStr}</td>
+                            <td class="fw-bold">${userStr}</td>
+                            <td>${buttonHtml}</td>
+                        </tr>
+                    `;
+                        });
+                    }
+                })
+                .catch(err => console.error("실사 현황 로드 에러:", err));
+        }
+
+        // 2) 실사 완료 / 취소 버튼 눌렀을 때 토글하는 함수
+        function toggleInspection(locationId, isCompleted) {
+            fetch("/api/inspections/toggle", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ locationId, isCompleted })
+            })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        loadInspectionStatus(); // 성공 시 현황판 다시 그리기
+                    } else {
+                        alert("상태 변경 실패");
+                    }
+                });
+        }
+
+        // 3) 페이지 켜지자마자 실행!
+        loadInspectionStatus();
+
+
+        // 2. 최근 수정 이력 렌더링 스크립트
+        fetch("/api/history")
+            .then(res => res.json())
+            .then(result => {
+                const container = document.getElementById("historyContainer");
+
+                if (result.success && result.data.length > 0) {
+                    let html = '<ul class="list-group list-group-flush">';
+
+                    result.data.forEach(log => {
+                        // 날짜 포멧 이쁘게 변경
+                        const date = new Date(log.updated_at).toLocaleString('ko-KR');
+                        const isUse = log.type === '사용';
+                        const typeBadgeClass = isUse ? 'bg-danger' : 'bg-primary'; // 사용:빨강 반납: 파랑
+                        const typeSign = isUse ? '-' : '+';
+                        const vendorName = (log.vendor && log.vendor !== '공통') ? `${log.vendor} ` : '';
+
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <div>
+                                    <span class="badge bg-secondary me-1">${log.location_name}</span>
+                                    <span class="badge bg-light text-dark border me-2">${log.category}</span>
+                                    <span class="fw-bold me-2">${vendorName} ${log.spec}</span>
+                                    
+                                    <span class="badge ${typeBadgeClass} ms-1">${log.type} ${typeSign}${log.change_qty}개</span>
+                                    <span class="text-dark ms-2 fw-bold">➡️ 잔여 ${log.result_qty}개</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block">${date}</small>
+                                    <span class="badge bg-info text-dark bg-opacity-10 border border-info"><i class="bi bi-person-fill me-1"></i>${log.updated_by}</span>
+                                </div>
+                            </li>
+                        `;
+
+                    });
+
+                    html += '</ul>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<p class="text-muted p-4 mb-0 text-center">최근 수정된 이력이 없습니다.</p>';
+                }
+            })
+            .catch(err => {
+                console.error("이력 로드 실패:", err);
+                document.getElementById("historyContainer").innerHTML = '<p class="text-danger p-4 mb-0 text-center">이력을 불러오지 못했습니다.</p>';
+            });
+
+        // 🌟 실사 팝업 전용 상태 변수들
+        let activeLocation = '';
+        let activeCategory = 'HDD';
+        let batchStore = {}; // 변경된 실사 수량을 기억할 임시 저장소 { itemId: { itemId, currentQty, newQty } }
+
+        // 1. 실사 팝업 열기 함수
+        function openInspectionModal(locationName) {
+            activeLocation = locationName;
+            activeCategory = 'HDD';
+            batchStore = {}; // 저장소 초기화
+
+            document.getElementById('inspectionModalTitle').textContent = `📋 ${locationName} IDC - 월간 정기 자산 실사`;
+
+            // 첫 카테고리(HDD) 선택 상태로 맞추기
+            resetCategoryListActive();
+
+            // 부트스트랩 모달 띄우기
+            const modal = new bootstrap.Modal(document.getElementById('inspectionModal'));
+            modal.show();
+
+            // HDD 데이터 불러오기
+            fetchCategoryItems('HDD');
+        }
+
+        // 2. 카테고리 클릭 시 변경
+        function selectInspectionCategory(category) {
+            activeCategory = category;
+            resetCategoryListActive();
+            fetchCategoryItems(category);
+        }
+
+        function resetCategoryListActive() {
+            document.querySelectorAll('#inspectionCategoryList .list-group-item').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim() === activeCategory) btn.classList.add('active');
+            });
+            document.getElementById('inspectionCategoryTitle').textContent = `${activeCategory} 목록`;
+        }
+
+        // 3. 백엔드에서 부품 불러와서 표에 채우기
+        async function fetchCategoryItems(category) {
+            const tbody = document.getElementById('inspectionItemsTable');
+            tbody.innerHTML = '<tr><td colspan="4" class="py-3 text-muted">불러오는 중...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/assets/${activeLocation}/${category}`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    tbody.innerHTML = '';
+                    
+                    // 자주쓰는 벤더 순서로 정렬
+                    const vendorOrder = ['Eslim', 'Huawei', 'Supermicro', 'HP', 'Dell', '공통'];
+
+                    result.data.sort((a, b) => {
+                        let indexA = vendorOrder.indexOf(a.vendor);
+                        let indexB = vendorOrder.indexOf(b.vendor);
+                        if (indexA === -1) indexA = 999;
+                        if (indexB === -1) indexB = 999;
+                        return indexA - indexB;
+                    });
+
+                    result.data.forEach(item => {
+                        // 이전에 이미 수정 입력한 수량이 있으면 그걸 쓰고, 없으면 현재 수량 그대로!
+                        const savedQty = batchStore[item.item_id] ? batchStore[item.item_id].newQty : item.quantity;
+
+                        tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-secondary">${item.vendor}</td>
+                        <td>${item.spec}</td>
+                        <td><span class="badge bg-light text-dark border">${item.quantity} 개</span></td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-center mx-auto fw-bold" 
+                                style="width: 100px;"
+                                value="${savedQty}"
+                                min="0"
+                                onchange="updateBatchStore(${item.item_id}, ${item.quantity}, this.value)"
+                            />
+                        </td>
+                    </tr>
+                `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-3 text-muted">등록된 자산이 없습니다.</td></tr>';
+                }
+            } catch (err) {
+                console.error("실사 자산 로드 에러:", err);
+            }
+        }
+
+        // 4. 입력창 값 바뀔 때 임시 저장소(batchStore)에 기록
+        function updateBatchStore(itemId, currentQty, newQty) {
+            batchStore[itemId] = {
+                itemId: itemId,
+                currentQty: parseInt(currentQty, 10),
+                newQty: parseInt(newQty, 10)
+            };
+        }
+
+        // 5. [💾 실사 저장 및 완료] 버튼 누를 때 백엔드로 일괄 전송
+        document.getElementById('saveBatchInspectionBtn').addEventListener('click', async () => {
+            const itemsArray = Object.values(batchStore);
+
+            try {
+                const res = await fetch('/api/inspections/batch-update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        locationName: activeLocation,
+                        items: itemsArray
+                    })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    alert(`${activeLocation} IDC 실사가 성공적으로 완료되었습니다!`);
+
+                    // 모달 닫기
+                    const modalEl = document.getElementById('inspectionModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
+
+                    // 대시보드 실사 현황표 새로고침
+                    loadInspectionStatus();
+                } else {
+                    alert(result.error || "실사 저장 실패");
+                }
+            } catch (err) {
+                console.error("실사 저장 통신 에러:", err);
+                alert("서버 통신에 실패했습니다.");
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
