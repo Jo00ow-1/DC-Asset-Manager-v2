@@ -46,7 +46,7 @@
 
 ## 🚀 시작하기
 
-\`\`\`bash
+```bash
 # 1. 저장소 클론
 git clone https://github.com/Jo00ow-1/DC-Asset-Manager-v2.git
 cd DC-Asset-Manager-v2
@@ -63,4 +63,4 @@ psql -U your_username -d your_dbname -f schema.sql
 
 # 5. 서버 실행
 npm start
-\`\`\`
+```
