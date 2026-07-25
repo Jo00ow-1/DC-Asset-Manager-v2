@@ -23,7 +23,7 @@ pool.query("SELECT NOW()", (err, result) => {
 
 // 미들웨어
 app.use(session({
-    secret: 'dc-asset-secret-key-1234',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -34,13 +34,34 @@ app.use(session({
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+// admin 권한 검사
+function checkAdmin(req, res, next) {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+    if (req.session.role !== 'admin') {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다." });
+    }
+    next();
+}
+
+// 로그인 유저 정보 및 권한 조회 API (버튼 노출)
+app.get("/api/me", (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+    res.json({
+        username: req.session.user,
+        role: req.session.role || 'user'
+    });
+});
 
 // 메인 페이지 (이미 로그인된 세션이 있다면 대시보드로 자동 이동)
 app.get("/", (req, res) => {
     if (req.session && req.session.user) {
         return res.redirect("/dashboard");
     }
-    res.sendFile(__dirname + "/public/index.html"); 
+    res.sendFile(__dirname + "/public/index.html");
 });
 
 // 회원가입 라우트 (모달 API 방식 - 모든 if문 중괄호 필수 적용)
@@ -106,8 +127,9 @@ app.post("/login", async (req, res) => {
         if (!isMatch) {
             return res.send("비밀번호가 일치하지 않습니다.");
         }
-        
+
         req.session.user = user.username;
+        req.session.role = user.role // admin 구분용
         res.redirect("/dashboard");
     } catch (err) {
         console.error(err);
@@ -189,6 +211,49 @@ app.get("/api/assets/:location/:category", async (req, res) => {
     } catch (err) {
         console.error("자산 데이터 조회 에러:", err);
         res.status(500).json({ error: "자산 데이터 조회 실패" });
+    }
+});
+
+// 자산 품목 추가 API (관리자 전용)
+app.post("/api/items", checkAdmin, async (req, res) => {
+    const { category, vendor, spec } = req.body;
+
+    if (!category || !vendor || !spec) {
+        return res.status(400).json({ error: "모든 항목을 입력해 주세요." });
+    }
+
+    try {
+        const result = await pool.query(
+            "INSERT INTO items (category, vendor, spec) VALUES ($1, $2, $3) RETURNING *",
+            [category.trim(), vendor.trim(), spec.trim()]
+        );
+        res.json({ success: true, message: "신규 자산이 등록되었습니다.", item: result.rows[0] });
+    } catch (err) {
+        console.error("자산 등록 에러", err);
+        res.status(500).json({ error: "자산 등록 실패" });
+    }
+});
+
+// 자산 품목 삭제 API (관리자 전용)
+app.delete("/api/items/:itemId", checkAdmin, async (req, res) => {
+    const { itemId } = req.params;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+        // 관련 재고 및 로그 삭제 후 items 삭제
+        await client.query("DELETE FROM stock_logs WHERE item_id = $1", [itemId]);
+        await client.query("DELETE FROM stock WHERE item_id = $1", [itemId]);
+        await client.query("DELETE FROM items WHERE id = $1", [itemId]);
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: "자산이 삭제되었습니다." });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("자산 삭제 에러:", err);
+        res.status(500).json({ error: "자산 삭제 실패" });
+    } finally {
+        client.release();
     }
 });
 

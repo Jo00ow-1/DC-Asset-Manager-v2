@@ -1,6 +1,9 @@
 --
 -- PostgreSQL database dump
 --
+
+\restrict lXqMi4VHDVaY2H99QB7vR4ilOarPxxi8txFd1mJlFoxFyx5T1FgPMlI45Eeaa9S
+
 -- Dumped from database version 18.4 (Homebrew)
 -- Dumped by pg_dump version 18.4 (Homebrew)
 
@@ -194,7 +197,8 @@ ALTER SEQUENCE public.stock_logs_id_seq OWNED BY public.stock_logs.id;
 CREATE TABLE public.users (
     id integer NOT NULL,
     username character varying(50) NOT NULL,
-    password character varying(255) NOT NULL
+    password character varying(255) NOT NULL,
+    role character varying(20) DEFAULT 'user'::character varying
 );
 
 
@@ -383,3 +387,6 @@ ALTER TABLE ONLY public.stock_logs
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict lXqMi4VHDVaY2H99QB7vR4ilOarPxxi8txFd1mJlFoxFyx5T1FgPMlI45Eeaa9S
+

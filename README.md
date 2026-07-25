@@ -14,11 +14,19 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 ### Monthly Batch Inspection
 ![Monthly Batch Inspection](./docs/DAM3.png)
 
+### Add Asset Item (Admin only)
+![Add Asset Item](./docs/DAM5.png)
+
+### Delete Asset Item (Admin only)
+![Delete Asset Item](./docs/DAM6.png)
+
 ### Login
 ![Login](./docs/login.png)
 
 ### Sign Up
 ![Sign Up](./docs/signup.png)
+
+---
 
 ---
 
@@ -50,13 +58,18 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 - Passwords stored with one-way `bcrypt` hashing
 - Session-based login via `express-session`, with middleware-enforced API authorization
 
+### 5. Role-Based Access Control (Admin / User)
+- `users.role` column distinguishes `admin` and `user` accounts, checked via session on every request
+- Admin-only actions (adding or deleting asset items) are protected server-side by a `checkAdmin` middleware — not just hidden in the UI
+- The "Manage Asset Items" button is dynamically shown/hidden based on the logged-in user's role, fetched via `/api/me`
+
 ---
 
 ## 📐 Database Schema (Summary)
 
 | Table | Description |
 |---|---|
-| `users` | User accounts and hashed passwords |
+| `users` | User accounts, hashed passwords, and role (`admin` / `user`) |
 | `locations` | Data center (IDC) location info |
 | `items` | Asset categories, manufacturers, specs |
 | `stock` | Per-location stock quantities (composite key: `location_id`, `item_id`) |

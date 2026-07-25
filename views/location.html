@@ -13,7 +13,6 @@
             background-color: #f4f6f9;
         }
 
-        /* 왼쪽 고정 사이드바 */
         .sidebar {
             min-height: 100vh;
             background-color: #1e293b;
@@ -38,7 +37,6 @@
             padding: 30px;
         }
 
-        /* 섹션 카드 스타일 */
         .asset-section {
             background-color: white;
             border-radius: 8px;
@@ -53,7 +51,7 @@
     <div class="container-fluid">
         <div class="row">
 
-            <!-- [요구사항 1] 왼쪽 사이드바 (1차 항목만 깔끔하게 정리) -->
+            <!-- 왼쪽 사이드바 -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar px-3">
                 <div class="mb-4 px-2">
                     <a href="/dashboard" class="text-white text-decoration-none fw-bold fs-6">
@@ -65,35 +63,36 @@
 
                 <ul class="nav flex-column">
                     <small class="text-white-50 px-2 fw-bold mb-2 d-block" style="font-size: 0.75rem;">항목별 수량</small>
-                    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-hdd-fill me-2"></i>HDD</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-hdd-network-fill me-2"></i>SSD</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-device-ssd-fill me-2"></i>NVMe</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-hdd-fill me-2"></i>HDD</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-hdd-network-fill me-2"></i>SSD</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-device-ssd-fill me-2"></i>NVMe</a></li>
                     <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-memory me-2"></i>메모리</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-badge-hd-fill me-2"></i>DAC</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cpu-fill me-2"></i>10G NIC</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i
-                                class="bi bi-lightning-charge-fill me-2"></i>파워케이블</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-badge-hd-fill me-2"></i>DAC</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cpu-fill me-2"></i>10G NIC</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-lightning-charge-fill me-2"></i>파워케이블</a></li>
                     <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-bezier2 me-2"></i>UTP케이블</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i
-                                class="bi bi-terminal-fill me-2"></i>IPMI케이블</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-terminal-fill me-2"></i>IPMI케이블</a></li>
                 </ul>
             </nav>
 
             <!-- 오른쪽: 메인 콘텐츠 영역 -->
             <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
-                <!-- 상단 타이틀 -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><span class="badge bg-success me-2" id="locationBadge"></span> <span
-                            id="categoryTitle">HDD</span> 재고 현황</h2>
-                    <span class="text-muted" id="lastUpdated">마지막 업데이트: 방금 전</span>
+                    <h2>
+                        <span class="badge bg-success me-2" id="locationBadge"></span>
+                        <span id="categoryTitle">HDD</span> 재고 현황
+                    </h2>
+                    <div>
+                        <!-- 관리자에게만 보이는 자산 관리(추가/삭제) 버튼 -->
+                        <button class="btn btn-outline-primary fw-bold me-2 d-none" id="addAssetBtn"
+                            data-bs-toggle="modal" data-bs-target="#addItemModal">
+                            <i class="bi bi-gear-fill me-1"></i>자산 항목 관리
+                        </button>
+                        <span class="text-muted small" id="lastUpdated">마지막 업데이트: 방금 전</span>
+                    </div>
                 </div>
 
-                <!-- 🌟 [NEW] 접속하자마자 보이는 최근 입출고 이력 카드 -->
+                <!-- 최근 입출고 이력 카드 -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold text-dark">
@@ -106,16 +105,15 @@
                     </div>
                 </div>
 
-                <!-- 기존 자산 목록이 그려지는 곳 -->
+                <!-- 자산 목록 표 그려지는 곳 -->
                 <div id="assetContainer">
                     <div class="text-center p-4 text-muted">자산 데이터를 불러오는 중...</div>
                 </div>
+            </main>
         </div>
-        </main>
-    </div>
     </div>
 
-    <!-- 1. 입출고 처리 모달 HTML -->
+    <!-- 1. 입출고 처리 모달 -->
     <div class="modal fade" id="editModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -124,14 +122,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- 현재 잔여 재고 표시 -->
                     <div class="alert alert-light border mb-3">
                         <small class="text-muted d-block">현재 잔여 재고</small>
-                        <span class="fs-4 fw-bold text-dark" id="modalCurrentQty">0</span> <span
-                            class="text-muted">개</span>
+                        <span class="fs-4 fw-bold text-dark" id="modalCurrentQty">0</span> <span class="text-muted">개</span>
                     </div>
 
-                    <!-- 입출고 구분 (사용 / 반납) -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">입출고 구분</label>
                         <div class="btn-group w-100" role="group">
@@ -143,11 +138,9 @@
                         </div>
                     </div>
 
-                    <!-- 변동 수량 입력 -->
                     <div class="mb-3">
                         <label for="changeQtyInput" class="form-label fw-bold">수량</label>
-                        <input type="number" class="form-control" id="changeQtyInput" min="1"
-                            placeholder="수량을 입력하세요 (예: 10)">
+                        <input type="number" class="form-control" id="changeQtyInput" min="1" placeholder="수량을 입력하세요 (예: 10)">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -158,21 +151,119 @@
         </div>
     </div>
 
-    <!-- 2. 부트스트랩 JS 라이브러리 (모달 작동에 필요) -->
+    <!-- 2. 자산 항목 관리 모달 (신규 등록 / 자산 삭제 탭 통합) -->
+    <div class="modal fade" id="addItemModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white py-2">
+                    <h5 class="modal-title fw-bold fs-6"><i class="bi bi-gear-fill me-2"></i>자산 항목 관리</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <!-- 등록/삭제 선택 탭 -->
+                    <ul class="nav nav-pills nav-justified mb-3" id="manageTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold py-1" id="add-tab" data-bs-toggle="tab"
+                                data-bs-target="#addTabPane" type="button">➕ 신규 등록</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold py-1 text-danger" id="delete-tab" data-bs-toggle="tab"
+                                data-bs-target="#deleteTabPane" type="button">🗑️ 자산 삭제</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="manageTabContent">
+                        <!-- 1) 신규 자산 등록 탭 -->
+                        <div class="tab-pane fade show active" id="addTabPane">
+                            <form id="addItemForm">
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold small mb-1">카테고리</label>
+                                    <select class="form-select form-select-sm" id="addItemCategory" required>
+                                        <option value="HDD">HDD</option>
+                                        <option value="SSD">SSD</option>
+                                        <option value="NVMe">NVMe</option>
+                                        <option value="메모리">메모리</option>
+                                        <option value="DAC">DAC</option>
+                                        <option value="10G NIC">10G NIC</option>
+                                        <option value="파워케이블">파워케이블</option>
+                                        <option value="UTP케이블">UTP케이블</option>
+                                        <option value="IPMI케이블">IPMI케이블</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold small mb-1">제조사 (Vendor)</label>
+                                    <input type="text" class="form-control form-control-sm" id="addItemVendor"
+                                        placeholder="예: Eslim, HP, 공통" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold small mb-1">품명 및 스펙</label>
+                                    <input type="text" class="form-control form-control-sm" id="addItemSpec"
+                                        placeholder="예: 12TB, 480GB_PM863a" required>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm fw-bold w-100" id="submitAddItemBtn">등록 완료</button>
+                            </form>
+                        </div>
+
+                        <!-- 2) 자산 삭제 탭 -->
+                        <div class="tab-pane fade" id="deleteTabPane">
+                            <div class="alert alert-warning p-2 small mb-3">
+                                ⚠️ 자산을 삭제하면 모든 지점의 해당 자산 재고 및 이력 데이터에 영향을 미칠 수 있습니다.
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-bold small mb-1">카테고리 선택</label>
+                                <select class="form-select form-select-sm" id="deleteCategorySelect">
+                                    <option value="HDD">HDD</option>
+                                    <option value="SSD">SSD</option>
+                                    <option value="NVMe">NVMe</option>
+                                    <option value="메모리">메모리</option>
+                                    <option value="DAC">DAC</option>
+                                    <option value="10G NIC">10G NIC</option>
+                                    <option value="파워케이블">파워케이블</option>
+                                    <option value="UTP케이블">UTP케이블</option>
+                                    <option value="IPMI케이블">IPMI케이블</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small mb-1">삭제할 자산 품목 선택</label>
+                                <select class="form-select form-select-sm" id="deleteItemSelect">
+                                    <option value="">-- 자산 선택 --</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-danger btn-sm fw-bold w-100" id="submitDeleteItemBtn">선택 자산 완전 삭제</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- 3. 우리 커스텀 자바스크립트 통합 -->
     <script>
-        // 1. 주소창에서 지점 이름 가져오기 및 초기 카테고리 설정
         const pathParts = window.location.pathname.split("/");
         const locationName = decodeURIComponent(pathParts[pathParts.length - 1]);
-        let currentCategory = 'HDD'; // 기본 선택값
+        let currentCategory = 'HDD';
+        let currentUserRole = 'user'; // 기본값
 
         document.getElementById("pageTitle").textContent = "DC Asset Manager - " + locationName + " IDC";
         document.getElementById("sidebarLocationName").textContent = locationName;
         document.getElementById("locationBadge").textContent = locationName;
 
-        // 지점 전용 최근 입출고 이력 25건 불러오기
+        // 1. 유저 권한 확인 후 관리자면 [자산 항목 관리] 버튼 노출
+        async function checkUserRole() {
+            try {
+                const res = await fetch("/api/me");
+                const data = await res.json();
+                if (data.role === 'admin') {
+                    currentUserRole = 'admin';
+                    document.getElementById("addAssetBtn").classList.remove("d-none");
+                }
+            } catch (err) {
+                console.error("유저 권한 확인 실패:", err);
+            }
+        }
+
+        // 2. 지점 전용 최근 입출고 이력 불러오기
         async function fetchBranchHistory() {
             try {
                 const res = await fetch(`/api/history/${locationName}`);
@@ -187,20 +278,20 @@
                         const badgeClass = isUse ? 'bg-danger' : (log.type === '반납' ? 'bg-primary' : 'bg-warning text-dark');
                         const sign = isUse ? '-' : (log.type === '반납' ? '+' : '');
                         const vendorName = (log.vendor && log.vendor !== '공통') ? `${log.vendor} ` : '';
-                        
+
                         html += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
-                        <div>
-                            <span class="badge bg-light text-dark border me-1">${log.category}</span>
-                            <span class="fw-bold me-2">${vendorName} ${log.spec}</span>
-                            <span class="badge ${badgeClass}">${log.type} ${sign}${log.change_qty}개</span>
-                            <span class="text-muted ms-2">(잔여 ${log.result_qty}개)</span>
-                        </div>
-                        <div class="text-end text-muted" style="font-size: 0.75rem;">
-                            ${date} | <span class="fw-bold">${log.updated_by}</span>
-                        </div>
-                    </li>
-                `;
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3">
+                                <div>
+                                    <span class="badge bg-light text-dark border me-1">${log.category}</span>
+                                    <span class="fw-bold me-2">${vendorName}${log.spec}</span>
+                                    <span class="badge ${badgeClass}">${log.type} ${sign}${log.change_qty}개</span>
+                                    <span class="text-muted ms-2">(잔여 ${log.result_qty}개)</span>
+                                </div>
+                                <div class="text-end text-muted" style="font-size: 0.75rem;">
+                                    ${date} | <span class="fw-bold">${log.updated_by}</span>
+                                </div>
+                            </li>
+                        `;
                     });
                     html += '</ul>';
                     container.innerHTML = html;
@@ -212,29 +303,27 @@
             }
         }
 
-        // 2. 화면 켜지자마자 데이터 불러오기
-        fetchBranchHistory();
-        fetchAssets(currentCategory);
+        // 초기 실행
+        checkUserRole().then(() => {
+            fetchBranchHistory();
+            fetchAssets(currentCategory);
+        });
 
-        // 3. 사이드바 메뉴 클릭 이벤트 달기 (메뉴 누르면 해당 자산으로 표 갈아치우기)
+        // 3. 사이드바 카테고리 클릭 이벤트
         document.querySelectorAll('.sidebar .nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault(); // 기본 이동 기능 막기
+                e.preventDefault();
 
-                // 메뉴 활성화(회색 배경) 디자인 변경
                 document.querySelectorAll('.sidebar .nav-link').forEach(nav => nav.classList.remove('active'));
                 link.classList.add('active');
 
-                // 선택한 카테고리명(예: HDD, 메모리) 가져오기
                 currentCategory = link.textContent.trim();
                 document.getElementById('categoryTitle').textContent = currentCategory;
 
-                // 새 카테고리 데이터 DB에서 불러오기
                 fetchAssets(currentCategory);
             });
         });
 
-        // 4. 백엔드에서 데이터 가져와서 화면에 그리는 함수
         async function fetchAssets(category) {
             try {
                 const response = await fetch(`/api/assets/${locationName}/${category}`);
@@ -248,12 +337,10 @@
             }
         }
 
-        // 5. DB 데이터를 받아서 HTML 표를 뚝딱뚝딱 만드는 함수
         function renderAssets(data) {
             const container = document.getElementById('assetContainer');
-            container.innerHTML = ''; // 기존 표 깨끗하게 지우기
+            container.innerHTML = '';
 
-            // 최근 업데이트 시간 계산하기
             let latestUpdate = null;
             data.forEach(item => {
                 if (item.updated_at) {
@@ -264,7 +351,6 @@
                 }
             });
 
-            // 계산된 시간 화면 우측 상단에 넣기
             const lastUpdatedEl = document.getElementById('lastUpdated');
             if (latestUpdate) {
                 lastUpdatedEl.textContent = `마지막 업데이트: ${latestUpdate.toLocaleString('ko-KR')}`;
@@ -277,10 +363,7 @@
                 return;
             }
 
-            // 1) 원하는 벤더 출력 순서 지정 (앞에 올수록 먼저 출력됨!)
             const vendorOrder = ['Eslim', 'Huawei', 'Supermicro', 'HP', 'Dell', '공통'];
-
-            // 2) 벤더별 텍스트 색상 클래스 지정
             const vendorColors = {
                 'Eslim': 'text-primary',
                 'Huawei': 'text-info',
@@ -290,44 +373,44 @@
                 '공통': 'text-success'
             };
 
-            // 3) 데이터를 벤더별로 묶어주기
             const vendors = {};
             data.forEach(item => {
                 if (!vendors[item.vendor]) vendors[item.vendor] = [];
                 vendors[item.vendor].push(item);
             });
 
-            // 4) 우리가 지정한 vendorOrder 순서대로 벤더 키 정렬하기
             const sortedVendorKeys = Object.keys(vendors).sort((a, b) => {
                 let indexA = vendorOrder.indexOf(a);
                 let indexB = vendorOrder.indexOf(b);
-                if (indexA === -1) indexA = 999; // 목록에 없는 벤더는 맨 뒤로
+                if (indexA === -1) indexA = 999;
                 if (indexB === -1) indexB = 999;
                 return indexA - indexB;
             });
 
-            // 5) 정렬된 순서대로 표 HTML 만들기
             for (const vendor of sortedVendorKeys) {
                 const items = vendors[vendor];
                 const colorClass = vendorColors[vendor] || 'text-secondary';
 
-                const tableRows = items.map(item => `
-                    <tr>
-                        <td style="width: 50%">${item.spec}</td>
-                        <td style="width: 30%"><span class="fs-6">${item.quantity}</span></td>
-                        <td style="width: 20%">
-                            <button class="btn btn-sm btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#editModal" 
-                                data-item-id="${item.item_id}"
-                                data-vendor="${item.vendor}" 
-                                data-spec="${item.spec}" 
-                                data-qty="${item.quantity}">
-                                수정
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
+                // 행의 삭제 버튼은 치우고 안전하게 [수정]만 유지
+                const tableRows = items.map(item => {
+                    return `
+                        <tr>
+                            <td style="width: 50%">${item.spec}</td>
+                            <td style="width: 30%"><span class="fs-6">${item.quantity}</span></td>
+                            <td style="width: 20%">
+                                <button class="btn btn-sm btn-primary" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#editModal" 
+                                    data-item-id="${item.item_id}"
+                                    data-vendor="${item.vendor}" 
+                                    data-spec="${item.spec}" 
+                                    data-qty="${item.quantity}">
+                                    수정
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
                 container.innerHTML += `
                     <div class="asset-section">
@@ -347,7 +430,7 @@
             }
         }
 
-        // 6. 모달 팝업 열릴 때 데이터 채워넣기
+        // 수량 수정 모달 처리
         let currentItemId = null;
         const editModal = document.getElementById('editModal');
 
@@ -360,17 +443,15 @@
                 const spec = button.getAttribute('data-spec') || '';
                 const currentQty = button.getAttribute('data-qty') || '0';
 
-                // 모달 정보 및 잔여 수량 셋팅
                 editModal.querySelector('#modalItemTitle').textContent = `${vendor} ${spec}`;
                 editModal.querySelector('#modalCurrentQty').textContent = currentQty;
-                editModal.querySelector('#changeQtyInput').value = ''; // 수량 입력창 초기화
-                editModal.querySelector('#typeUse').checked = true;    // 기본 '사용' 선택
+                editModal.querySelector('#changeQtyInput').value = '';
+                editModal.querySelector('#typeUse').checked = true;
             });
         }
 
-        // 7. 모달에서 [저장하기] 눌렀을 때 백엔드로 전달
         document.getElementById('saveQuantityBtn').addEventListener('click', async () => {
-            const type = document.querySelector('input[name="typeRadio"]:checked').value; // '사용' or '반납'
+            const type = document.querySelector('input[name="typeRadio"]:checked').value;
             const changeQty = document.getElementById('changeQtyInput').value;
 
             if (!changeQty || changeQty <= 0) {
@@ -392,7 +473,6 @@
 
                 const result = await response.json();
                 if (result.success) {
-                    // 성공하면 모달 닫고 데이터 새로고침
                     const modalInstance = bootstrap.Modal.getInstance(editModal);
                     modalInstance.hide();
 
@@ -404,6 +484,139 @@
             } catch (error) {
                 console.error('저장 오류:', error);
                 alert("서버 통신 오류가 발생했습니다.");
+            }
+        });
+
+        // 4. 신규 자산 등록 처리
+        document.getElementById("submitAddItemBtn").addEventListener("click", async () => {
+            const category = document.getElementById("addItemCategory").value;
+            const vendor = document.getElementById("addItemVendor").value.trim();
+            const spec = document.getElementById("addItemSpec").value.trim();
+
+            if (!vendor || !spec) {
+                alert("제조사와 품명/스펙을 입력해 주세요.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/items", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ category, vendor, spec })
+                });
+
+                const result = await res.json();
+                if (res.ok && result.success) {
+                    alert("🎉 자산이 신규 등록되었습니다!");
+
+                    const modalEl = document.getElementById('addItemModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    modalInstance.hide();
+
+                    document.getElementById("addItemForm").reset();
+
+                    currentCategory = category;
+                    document.getElementById('categoryTitle').textContent = currentCategory;
+
+                    document.querySelectorAll('.sidebar .nav-link').forEach(nav => {
+                        nav.classList.remove('active');
+                        if (nav.textContent.trim() === currentCategory) {
+                            nav.classList.add('active');
+                        }
+                    });
+
+                    fetchAssets(currentCategory);
+                } else {
+                    alert(result.error || "자산 등록 실패");
+                }
+            } catch (err) {
+                console.error("자산 등록 오류:", err);
+                alert("서버 통신 실패");
+            }
+        });
+
+        // 5. 삭제 탭 전용: 카테고리 변경 시 해당 자산 목록 드롭다운에 채우기
+        async function loadDeleteOptions(category) {
+            const selectEl = document.getElementById("deleteItemSelect");
+            selectEl.innerHTML = '<option value="">불러오는 중...</option>';
+
+            try {
+                const res = await fetch(`/api/assets/${locationName}/${category}`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    let optionsHtml = '<option value="">-- 삭제할 자산 선택 --</option>';
+                    result.data.forEach(item => {
+                        const vendorName = (item.vendor && item.vendor !== '공통') ? `[${item.vendor}] ` : '';
+                        optionsHtml += `<option value="${item.item_id}">${vendorName}${item.spec}</option>`;
+                    });
+                    selectEl.innerHTML = optionsHtml;
+                } else {
+                    selectEl.innerHTML = '<option value="">등록된 자산이 없습니다</option>';
+                }
+            } catch (err) {
+                console.error("삭제 목록 로드 에러:", err);
+                selectEl.innerHTML = '<option value="">목록 불러오기 실패</option>';
+            }
+        }
+
+        // 모달이 열리거나 삭제 탭/카테고리가 바뀔 때 목록 업데이트
+        document.getElementById('deleteCategorySelect').addEventListener('change', (e) => {
+            loadDeleteOptions(e.target.value);
+        });
+
+        document.getElementById('delete-tab').addEventListener('click', () => {
+            const currentDelCategory = document.getElementById('deleteCategorySelect').value;
+            loadDeleteOptions(currentDelCategory);
+        });
+
+        // 6. 모달 오픈 시 기본 설정
+        const addItemModalEl = document.getElementById('addItemModal');
+        if (addItemModalEl) {
+            addItemModalEl.addEventListener('show.bs.modal', function () {
+                // 기본으로 '등록 탭'으로 세팅
+                const addTabBtn = new bootstrap.Tab(document.getElementById('add-tab'));
+                addTabBtn.show();
+
+                // 셀렉트 박스 현재 카테고리로 자동 선택
+                document.getElementById('addItemCategory').value = currentCategory.trim();
+                document.getElementById('deleteCategorySelect').value = currentCategory.trim();
+            });
+        }
+
+        // 7. 모달 내부 삭제 버튼 처리
+        document.getElementById("submitDeleteItemBtn").addEventListener("click", async () => {
+            const itemSelect = document.getElementById("deleteItemSelect");
+            const itemId = itemSelect.value;
+            const itemText = itemSelect.options[itemSelect.selectedIndex]?.text;
+
+            if (!itemId) {
+                alert("삭제할 자산을 선택해 주세요.");
+                return;
+            }
+
+            if (!confirm(`정말로 [${itemText}] 자산을 완전히 삭제하시겠습니까?\n(해당 자산의 재고 및 이력 데이터도 함께 제거됩니다)`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/items/${itemId}`, { method: "DELETE" });
+                const result = await res.json();
+
+                if (res.ok && result.success) {
+                    alert("자산이 완전히 삭제되었습니다.");
+
+                    const modalInstance = bootstrap.Modal.getInstance(addItemModalEl);
+                    modalInstance.hide();
+
+                    fetchAssets(currentCategory);
+                    fetchBranchHistory();
+                } else {
+                    alert(result.error || "자산 삭제 실패");
+                }
+            } catch (err) {
+                console.error("자산 삭제 에러:", err);
+                alert("서버 통신 실패");
             }
         });
     </script>
