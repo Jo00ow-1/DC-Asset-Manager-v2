@@ -1,44 +1,91 @@
-# 🏢 데이터센터 자산 및 재고 관리 시스템 (DC Asset Management)
+# 🏢 DC Asset Manager v2
 
-> Node.js와 PostgreSQL을 활용하여 데이터센터(IDC) 지점별 자산 현황 모니터링, 입출고 관리, 월간 실사 및 이력 추적을 제공하는 풀스택 웹 애플리케이션입니다.
+> A full-stack web application for managing data center (IDC) asset inventory across multiple locations — including stock check-in/check-out, monthly physical inspections, and full change history tracking.
+
+Built to replace spreadsheet-based inventory tracking with a searchable, transaction-safe web interface.
+
+<!-- 📸 Add a screenshot or short demo GIF here -->
+<!-- ![screenshot](./docs/screenshot.png) -->
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Backend:** Node.js (Express)
-- **Database:** PostgreSQL (pg Driver)
-- **Authentication:** Express-Session, Bcrypt (비밀번호 암호화)
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla JS)
+- **Database:** PostgreSQL (`pg` driver)
+- **Auth:** express-session, bcrypt (password hashing)
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript
 
 ---
 
-## ✨ 핵심 구현 기능 (Key Features)
+## ✨ Key Features
 
-### 1. 지점별 자산 및 재고 현황 조회
-- `LEFT JOIN` 및 `COALESCE` 구문을 활용해 IDC 지점 및 카테고리별 자산 수량을 누락 없이 조회
-- 대시보드를 통해 지점별 총 재고 통계 데이터 제공
+### 1. Multi-Location Asset & Stock Overview
+- Uses `LEFT JOIN` and `COALESCE` to reliably aggregate stock quantities by IDC location and category, even when records are missing
+- Dashboard view summarizing total inventory stats per location
 
-### 2. 동시성을 고려한 안전한 입출고(사용/반납) 처리
-- **PostgreSQL Transaction (`BEGIN`/`COMMIT`/`ROLLBACK`)** 적용으로 처리 중 오류 발생 시 자동 롤백
-- **Upsert (`ON CONFLICT DO UPDATE`)** 구문을 활용해 재고 레코드의 생성 및 업데이트 처리 자동화
-- `stock_logs` 테이블을 통해 모든 재고 변동 내역(일시, 사용자, 변동 수량)을 이력으로 기록
+### 2. Concurrency-Safe Stock Transactions
+- PostgreSQL **transactions** (`BEGIN` / `COMMIT` / `ROLLBACK`) ensure atomic updates and automatic rollback on failure
+- **Upsert** logic (`ON CONFLICT DO UPDATE`) automates stock record creation/updates
+- Every stock change (timestamp, user, quantity delta) is logged to a `stock_logs` table for full audit history
 
-### 3. 일괄 자산실사(Batch Inspection) 시스템
-- 월간 자산 실사 진행 현황(`monthly_inspections`) 관리
-- 실사 결과와 실제 재고 수량 비교 후 차이 발생 시 일괄 업데이트 및 로그 자동 생성
+### 3. Batch Inventory Inspection
+- Tracks monthly physical inspection progress per location (`monthly_inspections`)
+- Compares inspection results against system records and auto-generates logs for any discrepancies found
 
-### 4. 보안 및 세션 관리
-- `bcrypt` 기반 비밀번호 단방향 암호화 저장
-- `express-session`을 이용한 로그인 세션 검증 및 미들웨어 기반 API 권한 제어
+### 4. Authentication & Access Control
+- Passwords stored with one-way `bcrypt` hashing
+- Session-based login via `express-session`, with middleware-enforced API authorization
 
 ---
 
-## 📐 DB 테이블 구조 (ERD Summary)
+## 📐 Database Schema (Summary)
 
-- **`users`**: 사용자 계정 및 암호화된 비밀번호
-- **`locations`**: IDC 지점 정보
-- **`items`**: 자산 카테고리, 제조사, 스펙 정보
-- **`stock`**: 지점별 자산 재고 수량 (Composite Key: `location_id`, `item_id`)
-- **`stock_logs`**: 자산 입출고/실사 변경 이력 데이터
-- **`monthly_inspections`**: 지점별 월간 실사 완료 여부 및 담당자 정보
+| Table | Description |
+|---|---|
+| `users` | User accounts and hashed passwords |
+| `locations` | Data center (IDC) location info |
+| `items` | Asset categories, manufacturers, specs |
+| `stock` | Per-location stock quantities (composite key: `location_id`, `item_id`) |
+| `stock_logs` | History of all stock changes (check-in/out, inspections) |
+| `monthly_inspections` | Per-location monthly inspection completion status and owner |
+
+---
+
+## 🚀 Getting Started
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/Jo00ow-1/DC-Asset-Manager-v2.git
+cd DC-Asset-Manager-v2
+
+# 2. Install dependencies
+npm install
+
+# 3. Configure environment variables
+cp .env.example .env
+# then fill in your DB credentials and session secret in .env
+
+# 4. Run database migrations / schema setup
+# (add instructions here once your schema script is finalized)
+
+# 5. Start the server
+npm start
+```
+
+The app will be available at `http://localhost:3000` (or whichever port is set in `.env`).
+
+---
+
+## 📌 Project Status
+
+This is an active personal project (v2 rebuild of an internal tool originally built at work) and is still under development. Current focus areas:
+- [ ] Finalize `.env.example` and setup docs
+- [ ] Add automated tests
+- [ ] Deploy a live demo
+
+---
+
+## 📄 License
+
+MIT (or update to whichever license you prefer)
