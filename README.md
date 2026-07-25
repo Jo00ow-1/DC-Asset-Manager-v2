@@ -66,8 +66,8 @@ npm install
 cp .env.example .env
 # then fill in your DB credentials and session secret in .env
 
-# 4. Run database migrations / schema setup
-# (add instructions here once your schema script is finalized)
+# 4. Set up the database schema
+psql -U your_username -d your_dbname -f schema.sql
 
 # 5. Start the server
 npm start
@@ -88,4 +88,4 @@ This is an active personal project (v2 rebuild of an internal tool originally bu
 
 ## 📄 License
 
-MIT (or update to whichever license you prefer)
+MIT
