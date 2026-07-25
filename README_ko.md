@@ -1,6 +1,22 @@
 # 🏢 데이터센터 자산 및 재고 관리 시스템 (DC Asset Management)
+[English](./README.md)
 
 > Node.js와 PostgreSQL을 활용하여 데이터센터(IDC) 지점별 자산 현황 모니터링, 입출고 관리, 월간 실사 및 이력 추적을 제공하는 풀스택 웹 애플리케이션입니다.
+
+### 대시보드
+![대시보드](./docs/DAM2.png)
+
+### DC별 재고 현황
+![DC별 재고 현황](./docs/DAM4.png)
+
+### 정기 자산실사
+![정기 자산실사](./docs/DAM3.png)
+
+### 로그인
+![로그인](./docs/login.png)
+
+### 회원가입
+![회원가입](./docs/signup.png)
 
 ---
 
@@ -42,3 +58,24 @@
 - **`stock`**: 지점별 자산 재고 수량 (Composite Key: `location_id`, `item_id`)
 - **`stock_logs`**: 자산 입출고/실사 변경 이력 데이터
 - **`monthly_inspections`**: 지점별 월간 실사 완료 여부 및 담당자 정보
+
+## 🚀 시작하기
+
+```bash
+# 1. 저장소 클론
+git clone https://github.com/Jo00ow-1/DC-Asset-Manager-v2.git
+cd DC-Asset-Manager-v2
+
+# 2. 패키지 설치
+npm install
+
+# 3. 환경변수 설정
+cp .env.example .env
+# .env 파일에 DB 정보와 세션 시크릿 입력
+
+# 4. DB 스키마 적용
+psql -U your_username -d your_dbname -f schema.sql
+
+# 5. 서버 실행
+npm start
+```
