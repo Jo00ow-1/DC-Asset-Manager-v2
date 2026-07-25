@@ -1,4 +1,5 @@
 # 🏢 DC Asset Manager v2
+[한국어](./README_ko.md)
 
 > A full-stack web application for managing data center (IDC) asset inventory across multiple locations — including stock check-in/check-out, monthly physical inspections, and full change history tracking.
 
@@ -80,12 +81,6 @@ The app will be available at `http://localhost:3000` (or whichever port is set i
 ## 📌 Project Status
 
 This is an active personal project (v2 rebuild of an internal tool originally built at work) and is still under development. Current focus areas:
-- [ ] Finalize `.env.example` and setup docs
+- [x] Finalize `.env.example` and setup docs
 - [ ] Add automated tests
 - [ ] Deploy a live demo
-
----
-
-## 📄 License
-
-MIT
