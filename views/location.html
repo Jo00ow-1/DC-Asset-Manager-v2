@@ -79,7 +79,7 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>
-                        <span class="badge bg-success me-2" id="locationBadge"></span>
+                        <span class="badge me-2" id="locationBadge"></span>
                         <span id="categoryTitle">HDD</span> 재고 현황
                     </h2>
                     <div>
@@ -244,10 +244,18 @@
         const locationName = decodeURIComponent(pathParts[pathParts.length - 1]);
         let currentCategory = 'HDD';
         let currentUserRole = 'user'; // 기본값
+          // 1. 지점 카드 렌더링 스크립트
+        const locationColorMap = {
+            "판교": "bg-primary",
+            "안양": "bg-success",
+            "안산": "bg-warning",
+            "하남": "bg-info"
+        };
 
         document.getElementById("pageTitle").textContent = "DC Asset Manager - " + locationName + " IDC";
         document.getElementById("sidebarLocationName").textContent = locationName;
         document.getElementById("locationBadge").textContent = locationName;
+        document.getElementById("locationBadge").classList.add(locationColorMap[locationName] ?? "bg-secondary");
 
         // 1. 유저 권한 확인 후 관리자면 [자산 항목 관리] 버튼 노출
         async function checkUserRole() {
@@ -370,7 +378,7 @@
                 'Supermicro': 'text-warning',
                 'HP': 'text-danger',
                 'Dell': 'text-dark',
-                '공통': 'text-success'
+                '공통': 'text-secondary'
             };
 
             const vendors = {};
