@@ -63,15 +63,22 @@
 
                 <ul class="nav flex-column">
                     <small class="text-white-50 px-2 fw-bold mb-2 d-block" style="font-size: 0.75rem;">항목별 수량</small>
-                    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-hdd-fill me-2"></i>HDD</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-hdd-network-fill me-2"></i>SSD</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-device-ssd-fill me-2"></i>NVMe</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-hdd-fill me-2"></i>HDD</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-hdd-network-fill me-2"></i>SSD</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-device-ssd-fill me-2"></i>NVMe</a>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-memory me-2"></i>메모리</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-badge-hd-fill me-2"></i>DAC</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cpu-fill me-2"></i>10G NIC</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-lightning-charge-fill me-2"></i>파워케이블</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-badge-hd-fill me-2"></i>DAC</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-cpu-fill me-2"></i>10G NIC</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i
+                                class="bi bi-lightning-charge-fill me-2"></i>파워케이블</a></li>
                     <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-bezier2 me-2"></i>UTP케이블</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-terminal-fill me-2"></i>IPMI케이블</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i
+                                class="bi bi-terminal-fill me-2"></i>IPMI케이블</a></li>
                 </ul>
             </nav>
 
@@ -122,9 +129,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-danger p-2 small d-none mb-3" id="editModalErrorAlert"></div>
                     <div class="alert alert-light border mb-3">
                         <small class="text-muted d-block">현재 잔여 재고</small>
-                        <span class="fs-4 fw-bold text-dark" id="modalCurrentQty">0</span> <span class="text-muted">개</span>
+                        <span class="fs-4 fw-bold text-dark" id="modalCurrentQty">0</span> <span
+                            class="text-muted">개</span>
                     </div>
 
                     <div class="mb-3">
@@ -140,7 +149,8 @@
 
                     <div class="mb-3">
                         <label for="changeQtyInput" class="form-label fw-bold">수량</label>
-                        <input type="number" class="form-control" id="changeQtyInput" min="1" placeholder="수량을 입력하세요 (예: 10)">
+                        <input type="number" class="form-control" id="changeQtyInput" min="1"
+                            placeholder="수량을 입력하세요 (예: 10)">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -200,7 +210,8 @@
                                     <input type="text" class="form-control form-control-sm" id="addItemSpec"
                                         placeholder="예: 12TB, 480GB_PM863a" required>
                                 </div>
-                                <button type="button" class="btn btn-primary btn-sm fw-bold w-100" id="submitAddItemBtn">등록 완료</button>
+                                <button type="button" class="btn btn-primary btn-sm fw-bold w-100"
+                                    id="submitAddItemBtn">등록 완료</button>
                             </form>
                         </div>
 
@@ -229,7 +240,8 @@
                                     <option value="">-- 자산 선택 --</option>
                                 </select>
                             </div>
-                            <button type="button" class="btn btn-danger btn-sm fw-bold w-100" id="submitDeleteItemBtn">선택 자산 완전 삭제</button>
+                            <button type="button" class="btn btn-danger btn-sm fw-bold w-100"
+                                id="submitDeleteItemBtn">선택 자산 완전 삭제</button>
                         </div>
                     </div>
                 </div>
@@ -244,7 +256,7 @@
         const locationName = decodeURIComponent(pathParts[pathParts.length - 1]);
         let currentCategory = 'HDD';
         let currentUserRole = 'user'; // 기본값
-          // 1. 지점 카드 렌더링 스크립트
+        // 1. 지점 카드 렌더링 스크립트
         const locationColorMap = {
             "판교": "bg-primary",
             "안양": "bg-success",
@@ -439,7 +451,7 @@
         }
 
         // 수량 수정 모달 처리
-        let currentItemId = null;
+        let currentItemId = null; // 🌟 이 변수는 필수 유지!
         const editModal = document.getElementById('editModal');
 
         if (editModal) {
@@ -451,6 +463,13 @@
                 const spec = button.getAttribute('data-spec') || '';
                 const currentQty = button.getAttribute('data-qty') || '0';
 
+                // 🌟 모달이 열릴 때 이전 에러 메시지 초기화 및 숨기기
+                const errorAlert = document.getElementById('editModalErrorAlert');
+                if (errorAlert) {
+                    errorAlert.textContent = '';
+                    errorAlert.classList.add('d-none');
+                }
+
                 editModal.querySelector('#modalItemTitle').textContent = `${vendor} ${spec}`;
                 editModal.querySelector('#modalCurrentQty').textContent = currentQty;
                 editModal.querySelector('#changeQtyInput').value = '';
@@ -461,9 +480,16 @@
         document.getElementById('saveQuantityBtn').addEventListener('click', async () => {
             const type = document.querySelector('input[name="typeRadio"]:checked').value;
             const changeQty = document.getElementById('changeQtyInput').value;
+            const errorAlert = document.getElementById('editModalErrorAlert');
 
+            // 🌟 alert 대신 모달 내 빨간 에러박스 출력
             if (!changeQty || changeQty <= 0) {
-                alert("1개 이상의 수량을 입력해주세요.");
+                if (errorAlert) {
+                    errorAlert.textContent = "1개 이상의 수량을 입력해주세요.";
+                    errorAlert.classList.remove('d-none');
+                } else {
+                    alert("1개 이상의 수량을 입력해주세요.");
+                }
                 return;
             }
 
@@ -479,6 +505,13 @@
                     })
                 });
 
+                // 🌟 3번 작업: 세션 만료 (401) 처리
+                if (response.status === 401) {
+                    alert("세션이 만료되었습니다. 다시 로그인해 주세요.");
+                    window.location.href = "/";
+                    return;
+                }
+
                 const result = await response.json();
                 if (result.success) {
                     const modalInstance = bootstrap.Modal.getInstance(editModal);
@@ -487,11 +520,20 @@
                     fetchAssets(currentCategory);
                     fetchBranchHistory();
                 } else {
-                    alert(result.error || "수량 수정에 실패했습니다.");
+                    // 🌟 서버에서 넘겨준 에러 (예: 재고 부족 등)를 모달 안 박스에 표시
+                    if (errorAlert) {
+                        errorAlert.textContent = result.error || "수량 수정에 실패했습니다.";
+                        errorAlert.classList.remove('d-none');
+                    } else {
+                        alert(result.error || "수량 수정에 실패했습니다.");
+                    }
                 }
             } catch (error) {
                 console.error('저장 오류:', error);
-                alert("서버 통신 오류가 발생했습니다.");
+                if (errorAlert) {
+                    errorAlert.textContent = "서버 통신 오류가 발생했습니다.";
+                    errorAlert.classList.remove('d-none');
+                }
             }
         });
 

@@ -99,16 +99,16 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-// 로그인 라우트
+// 로그인 라우트 (모달 API 방식 - JSON 응답)
 app.post("/login", async (req, res) => {
     const id = req.body.id?.trim();
     const password = req.body.password?.trim();
 
     if (!id) {
-        return res.send("아이디를 입력해주세요.");
+        return res.status(400).json({ error: "아이디를 입력해주세요." });
     }
     if (!password) {
-        return res.send("비밀번호를 입력해주세요.");
+        return res.status(400).json({ error: "비밀번호를 입력해주세요." });
     }
 
     try {
@@ -120,20 +120,22 @@ app.post("/login", async (req, res) => {
         const user = result.rows[0];
 
         if (!user) {
-            return res.send("존재하지 않는 아이디입니다.");
+            return res.status(400).json({ error: "존재하지 않는 아이디입니다." });
         }
+
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.send("비밀번호가 일치하지 않습니다.");
+            return res.status(400).json({ error: "비밀번호가 일치하지 않습니다." });
         }
 
         req.session.user = user.username;
-        req.session.role = user.role // admin 구분용
-        res.redirect("/dashboard");
+        req.session.role = user.role || 'user'; // admin / user 구분
+
+        res.json({ success: true, message: "로그인 성공!" });
     } catch (err) {
-        console.error(err);
-        res.send("로그인 실패");
+        console.error("로그인 에러:", err);
+        res.status(500).json({ error: "로그인 처리 중 오류가 발생했습니다." });
     }
 });
 
