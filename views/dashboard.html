@@ -31,13 +31,18 @@
 </head>
 
 <body>
+    <!-- 🌟 네비바 정돈: 우측에 비밀번호 변경 + 로그아웃 나란히 배치 -->
     <nav class="navbar navbar-dark main-navbar sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/dashboard">
                 <i class="bi bi-box-seam me-2"></i>DC Asset Manager
             </a>
-            <div class="d-flex align-items-center">
-                <a href="/logout" class="btn btn-outline-danger btn-sm">로그아웃</a>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-light btn-sm fw-bold" data-bs-toggle="modal"
+                    data-bs-target="#changePwModal">
+                    <i class="bi bi-key-fill me-1"></i>비밀번호 변경
+                </button>
+                <a href="/logout" class="btn btn-outline-danger btn-sm fw-bold">로그아웃</a>
             </div>
         </div>
     </nav>
@@ -84,11 +89,15 @@
         </div>
 
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2 text-secondary"></i>최근 자산 입출고 기록
                 </h5>
+                <!-- 전체 이력 모달 버튼 -->
+                <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal"
+                    data-bs-target="#allHistoryModal" onclick="loadAllHistoryModal()">
+                    <i class="bi bi-search me-1"></i>전체 이력 검색
+                </button>
             </div>
-            <!-- 이력 id="historyContainer"-->
             <div class="card-body p-0" id="historyContainer" style="max-height: 420px; overflow-y: auto;">
                 <div class="text-center p-4 text-muted">
                     <div class="spinner-border spinner-border-sm me-2" role="status"></div>이력을 불러오는 중 ...
@@ -97,7 +106,7 @@
         </div>
     </div>
 
-    <!-- 🌟 일괄 자산 실사 팝업 모달 -->
+    <!-- 일괄 자산 실사 팝업 모달 -->
     <div class="modal fade" id="inspectionModal" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -167,6 +176,131 @@
         </div>
     </div>
 
+    <!-- 🌟 전체 자산 이력 조회 대형 모달 -->
+    <div class="modal fade" id="allHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2">
+                    <h5 class="modal-title fw-bold fs-6"><i class="bi bi-journal-text me-2"></i>전체 자산 입출고/실사 변경 이력</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <!-- 검색 필터 영역 -->
+                    <div class="row g-2 mb-3 bg-light p-3 rounded border">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">IDC 센터</label>
+                            <select class="form-select form-select-sm" id="historyFilterLocation">
+                                <option value="ALL">전체 지점</option>
+                                <option value="판교">판교</option>
+                                <option value="안양">안양</option>
+                                <option value="안산">안산</option>
+                                <option value="하남">하남</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">카테고리</label>
+                            <select class="form-select form-select-sm" id="historyFilterCategory">
+                                <option value="ALL">전체 카테고리</option>
+                                <option value="HDD">HDD</option>
+                                <option value="SSD">SSD</option>
+                                <option value="NVMe">NVMe</option>
+                                <option value="메모리">메모리</option>
+                                <option value="DAC">DAC</option>
+                                <option value="10G NIC">10G NIC</option>
+                                <option value="파워케이블">파워케이블</option>
+                                <option value="UTP케이블">UTP케이블</option>
+                                <option value="IPMI케이블">IPMI케이블</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold mb-1">품명/제조사 검색</label>
+                            <input type="text" class="form-control form-control-sm" id="historyFilterSearch"
+                                placeholder="스펙 또는 제조사 입력 (예: 12TB, Eslim)">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="fetchFilteredHistory()">
+                                <i class="bi bi-search me-1"></i>조회
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 이력 테이블 -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle text-center border">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>일시</th>
+                                    <th>지점</th>
+                                    <th>카테고리</th>
+                                    <th>제조사 / 품명</th>
+                                    <th>구분</th>
+                                    <th>변동 수량</th>
+                                    <th>결과 수량</th>
+                                    <th>작업자</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allHistoryTableBody">
+                                <tr>
+                                    <td colspan="8" class="py-4 text-muted">이력을 불러오는 중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 이력 테이블 아래에 페이지네이션 버튼 영역 추가 -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                        <small class="text-muted" id="historyPaginationInfo">총 0건 (1 / 1 페이지)</small>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="historyPaginationList">
+                                <!-- JS가 페이지 번호 버튼을 생성합니다 -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 비밀번호 변경 모달 -->
+    <div class="modal fade" id="changePwModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2">
+                    <h5 class="modal-title fw-bold fs-6"><i class="bi bi-shield-lock-fill me-2"></i>비밀번호 변경</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="alert alert-danger p-2 small d-none mb-3" id="changePwErrorAlert"></div>
+
+                    <form id="changePwForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small mb-1">현재 비밀번호</label>
+                            <input type="password" class="form-control form-control-sm" id="currentPwInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small mb-1">새 비밀번호</label>
+                            <input type="password" class="form-control form-control-sm" id="newPwInput"
+                                placeholder="4자리 이상 입력" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small mb-1">새 비밀번호 확인</label>
+                            <input type="password" class="form-control form-control-sm" id="confirmPwInput" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary btn-sm fw-bold" id="submitChangePwBtn">변경하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         // 1. 지점 카드 렌더링 스크립트
         const colorMap = {
@@ -207,7 +341,6 @@
                 .then(res => res.json())
                 .then(result => {
                     if (result.success) {
-                        //년, 월 텍스트 분리해서 타이틀에넣기
                         const [year, month] = result.yearMonth.split('-');
                         document.getElementById("inspectionTitle").textContent = `📋 ${year}년 ${parseInt(month)}월 정기 자산 실사 현황`;
 
@@ -223,7 +356,6 @@
                             const dateStr = item.completed_at ? new Date(item.completed_at).toLocaleString('ko-KR') : '-';
                             const userStr = item.completed_by ? item.completed_by : '-';
 
-                            // 버튼 분기 (완료되어있으면 '취소' 버튼, 안되어있으면 '완료하기' 버튼)
                             const buttonHtml = isDone
                                 ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="openInspectionModal('${item.location_name}')">실사 재점검</button>
                                 <button class="btn btn-sm btn-outline-danger" onclick="toggleInspection(${item.location_id}, false)">완료 취소</button>`
@@ -244,7 +376,6 @@
                 .catch(err => console.error("실사 현황 로드 에러:", err));
         }
 
-        // 2) 실사 완료 / 취소 버튼 눌렀을 때 토글하는 함수
         function toggleInspection(locationId, isCompleted) {
             fetch("/api/inspections/toggle", {
                 method: "POST",
@@ -254,18 +385,15 @@
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
-                        loadInspectionStatus(); // 성공 시 현황판 다시 그리기
+                        loadInspectionStatus();
                     } else {
                         alert("상태 변경 실패");
                     }
                 });
         }
 
-        // 3) 페이지 켜지자마자 실행!
         loadInspectionStatus();
 
-
-        // 2. 최근 수정 이력 렌더링 스크립트
         fetch("/api/history")
             .then(res => res.json())
             .then(result => {
@@ -275,10 +403,9 @@
                     let html = '<ul class="list-group list-group-flush">';
 
                     result.data.forEach(log => {
-                        // 날짜 포멧 이쁘게 변경
                         const date = new Date(log.updated_at).toLocaleString('ko-KR');
                         const isUse = log.type === '사용';
-                        const typeBadgeClass = isUse ? 'bg-danger' : 'bg-primary'; // 사용:빨강 반납: 파랑
+                        const typeBadgeClass = isUse ? 'bg-danger' : 'bg-primary';
                         const typeSign = isUse ? '-' : '+';
                         const vendorName = (log.vendor && log.vendor !== '공통') ? `${log.vendor} ` : '';
 
@@ -312,31 +439,25 @@
                 document.getElementById("historyContainer").innerHTML = '<p class="text-danger p-4 mb-0 text-center">이력을 불러오지 못했습니다.</p>';
             });
 
-        // 🌟 실사 팝업 전용 상태 변수들
         let activeLocation = '';
         let activeCategory = 'HDD';
-        let batchStore = {}; // 변경된 실사 수량을 기억할 임시 저장소 { itemId: { itemId, currentQty, newQty } }
+        let batchStore = {};
 
-        // 1. 실사 팝업 열기 함수
         function openInspectionModal(locationName) {
             activeLocation = locationName;
             activeCategory = 'HDD';
-            batchStore = {}; // 저장소 초기화
+            batchStore = {};
 
             document.getElementById('inspectionModalTitle').textContent = `📋 ${locationName} IDC - 월간 정기 자산 실사`;
 
-            // 첫 카테고리(HDD) 선택 상태로 맞추기
             resetCategoryListActive();
 
-            // 부트스트랩 모달 띄우기
             const modal = new bootstrap.Modal(document.getElementById('inspectionModal'));
             modal.show();
 
-            // HDD 데이터 불러오기
             fetchCategoryItems('HDD');
         }
 
-        // 2. 카테고리 클릭 시 변경
         function selectInspectionCategory(category) {
             activeCategory = category;
             resetCategoryListActive();
@@ -351,7 +472,6 @@
             document.getElementById('inspectionCategoryTitle').textContent = `${activeCategory} 목록`;
         }
 
-        // 3. 백엔드에서 부품 불러와서 표에 채우기
         async function fetchCategoryItems(category) {
             const tbody = document.getElementById('inspectionItemsTable');
             tbody.innerHTML = '<tr><td colspan="4" class="py-3 text-muted">불러오는 중...</td></tr>';
@@ -362,8 +482,7 @@
 
                 if (result.success && result.data.length > 0) {
                     tbody.innerHTML = '';
-                    
-                    // 자주쓰는 벤더 순서로 정렬
+
                     const vendorOrder = ['Eslim', 'Huawei', 'Supermicro', 'HP', 'Dell', '공통'];
 
                     result.data.sort((a, b) => {
@@ -375,7 +494,6 @@
                     });
 
                     result.data.forEach(item => {
-                        // 이전에 이미 수정 입력한 수량이 있으면 그걸 쓰고, 없으면 현재 수량 그대로!
                         const savedQty = batchStore[item.item_id] ? batchStore[item.item_id].newQty : item.quantity;
 
                         tbody.innerHTML += `
@@ -402,7 +520,6 @@
             }
         }
 
-        // 4. 입력창 값 바뀔 때 임시 저장소(batchStore)에 기록
         function updateBatchStore(itemId, currentQty, newQty) {
             batchStore[itemId] = {
                 itemId: itemId,
@@ -411,7 +528,6 @@
             };
         }
 
-        // 5. [💾 실사 저장 및 완료] 버튼 누를 때 백엔드로 일괄 전송
         document.getElementById('saveBatchInspectionBtn').addEventListener('click', async () => {
             const itemsArray = Object.values(batchStore);
 
@@ -429,12 +545,10 @@
                 if (result.success) {
                     alert(`${activeLocation} IDC 실사가 성공적으로 완료되었습니다!`);
 
-                    // 모달 닫기
                     const modalEl = document.getElementById('inspectionModal');
                     const modalInstance = bootstrap.Modal.getInstance(modalEl);
                     modalInstance.hide();
 
-                    // 대시보드 실사 현황표 새로고침
                     loadInspectionStatus();
                 } else {
                     alert(result.error || "실사 저장 실패");
@@ -444,9 +558,195 @@
                 alert("서버 통신에 실패했습니다.");
             }
         });
-    </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        // 비밀번호 변경 모달 오픈 시 초기화
+        const changePwModalEl = document.getElementById('changePwModal');
+        if (changePwModalEl) {
+            changePwModalEl.addEventListener('show.bs.modal', function () {
+                document.getElementById('changePwForm').reset();
+                const errorAlert = document.getElementById('changePwErrorAlert');
+                if (errorAlert) {
+                    errorAlert.textContent = '';
+                    errorAlert.classList.add('d-none');
+                }
+            });
+        }
+
+        // 비밀번호 변경 제출 버튼 클릭
+        document.getElementById("submitChangePwBtn")?.addEventListener("click", async () => {
+            const currentPassword = document.getElementById("currentPwInput").value;
+            const newPassword = document.getElementById("newPwInput").value;
+            const confirmPassword = document.getElementById("confirmPwInput").value;
+            const errorAlert = document.getElementById("changePwErrorAlert");
+
+            try {
+                const res = await fetch("/api/change-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+                });
+
+                const result = await res.json();
+
+                if (res.ok && result.success) {
+                    alert("🎉 비밀번호가 성공적으로 변경되었습니다!");
+                    const modalInstance = bootstrap.Modal.getInstance(changePwModalEl);
+                    modalInstance.hide();
+                } else {
+                    if (errorAlert) {
+                        errorAlert.textContent = result.error || "비밀번호 변경에 실패했습니다.";
+                        errorAlert.classList.remove("d-none");
+                    } else {
+                        alert(result.error);
+                    }
+                }
+            } catch (err) {
+                console.error("비밀번호 변경 오류:", err);
+                alert("서버 통신 오류가 발생했습니다.");
+            }
+        });
+
+        // 전체 이력 모달 불러오기 & 필터 조회 로직
+        let rawHistoryData = []; // API에서 받아온 전체 검색 결과
+        let currentHistoryPage = 1;
+        const historyPageSize = 25; // 한 페이지당 25개씩 끊기
+        function loadAllHistoryModal() {
+            // 초기화 후 전체 검색 실행
+            document.getElementById("historyFilterLocation").value = "ALL";
+            document.getElementById("historyFilterCategory").value = "ALL";
+            document.getElementById("historyFilterSearch").value = "";
+            fetchFilteredHistory();
+        }
+
+        //  1) API 데이터 가져오기 (결과를 변수에 저장 후 1페이지 렌더링)
+        async function fetchFilteredHistory() {
+            const loc = document.getElementById("historyFilterLocation").value;
+            const cat = document.getElementById("historyFilterCategory").value;
+            const search = document.getElementById("historyFilterSearch").value;
+
+            const tbody = document.getElementById("allHistoryTableBody");
+            tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>검색 중...</td></tr>';
+
+            try {
+                const queryParams = new URLSearchParams({
+                    location: loc,
+                    category: cat,
+                    search: search
+                });
+
+                const res = await fetch(`/api/history/search/all?${queryParams.toString()}`);
+                const result = await res.json();
+
+                if (result.success) {
+                    rawHistoryData = result.data || [];
+                    currentHistoryPage = 1; // 검색할 때마다 1페이지로 리셋
+                    renderHistoryPage(currentHistoryPage);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-danger">이력을 불러오지 못했습니다.</td></tr>';
+                }
+            } catch (err) {
+                console.error("이력 조회 에러:", err);
+                tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-danger">이력을 불러오지 못했습니다.</td></tr>';
+            }
+        }
+
+        //  2) 지정한 페이지(25개)만 화면에 표로 그려주는 함수
+        function renderHistoryPage(page) {
+            currentHistoryPage = page;
+            const tbody = document.getElementById("allHistoryTableBody");
+            const totalCount = rawHistoryData.length;
+            const totalPages = Math.ceil(totalCount / historyPageSize) || 1;
+
+            if (totalCount === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-muted">조건에 일치하는 이력이 없습니다.</td></tr>';
+                document.getElementById("historyPaginationInfo").textContent = "총 0건 (0 / 0 페이지)";
+                document.getElementById("historyPaginationList").innerHTML = "";
+                return;
+            }
+
+            // 25개씩 데이터 슬라이싱
+            const startIndex = (page - 1) * historyPageSize;
+            const pageData = rawHistoryData.slice(startIndex, startIndex + historyPageSize);
+
+            let html = '';
+            pageData.forEach(log => {
+                const date = new Date(log.updated_at).toLocaleString('ko-KR');
+
+                let badgeClass = 'bg-primary';
+                let sign = '+';
+                if (log.type === '사용') {
+                    badgeClass = 'bg-danger';
+                    sign = '-';
+                } else if (log.type === '실사') {
+                    badgeClass = 'bg-warning text-dark';
+                    sign = '';
+                }
+
+                const vendorStr = (log.vendor && log.vendor !== '공통') ? `[${log.vendor}] ` : '';
+
+                html += `
+            <tr>
+                <td class="small text-muted">${date}</td>
+                <td><span class="badge bg-secondary">${log.location_name}</span></td>
+                <td><span class="badge bg-light text-dark border">${log.category}</span></td>
+                <td class="fw-bold text-start ps-3">${vendorStr}${log.spec}</td>
+                <td><span class="badge ${badgeClass}">${log.type}</span></td>
+                <td class="fw-bold">${sign}${log.change_qty}개</td>
+                <td class="text-primary fw-bold">${log.result_qty}개</td>
+                <td><span class="fw-bold small">${log.updated_by}</span></td>
+            </tr>
+        `;
+            });
+
+            tbody.innerHTML = html;
+
+            // 하단 카운트 정보 및 페이지네이션 버튼 갱신
+            document.getElementById("historyPaginationInfo").textContent = `총 ${totalCount}건 (${page} / ${totalPages} 페이지)`;
+            renderHistoryPaginationControls(totalPages, page);
+        }
+
+        //  3) 하단 페이지 버튼([이전] 1 2 3 [다음]) 생성 로직
+        function renderHistoryPaginationControls(totalPages, currentPage) {
+            const navList = document.getElementById("historyPaginationList");
+            let html = '';
+
+            // [이전] 버튼
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" onclick="changeHistoryPage(${currentPage - 1}); return false;">이전</a></li>`;
+
+            // 페이지 번호 버튼 (최대 5개씩 노출)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                html += `<li class="page-item ${activeClass}"><a class="page-link" href="#" onclick="changeHistoryPage(${i}); return false;">${i}</a></li>`;
+            }
+
+            // [다음] 버튼
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+            html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" onclick="changeHistoryPage(${currentPage + 1}); return false;">다음</a></li>`;
+
+            navList.innerHTML = html;
+        }
+
+        //  4) 페이지 이동 함수
+        function changeHistoryPage(newPage) {
+            const totalPages = Math.ceil(rawHistoryData.length / historyPageSize) || 1;
+            if (newPage < 1 || newPage > totalPages) return;
+            renderHistoryPage(newPage);
+        }
+
+        // 검색창에서 엔터 쳤을 때도 조회되도록 이벤트 걸기
+        document.getElementById("historyFilterSearch")?.addEventListener("keyup", (e) => {
+            if (e.key === "Enter") {
+                fetchFilteredHistory();
+            }
+        });
+    </script>
 </body>
 
 </html>

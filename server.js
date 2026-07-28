@@ -154,6 +154,56 @@ app.get("/logout", (req, res) => {
     });
 });
 
+// 비밀번호 변경 API
+app.post("/api/change-password", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const username = req.session.user;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ error: "모든 항목을 입력해 주세요." });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ error: "새 비밀번호가 서로 일치하지 않습니다." });
+    }
+
+    if (newPassword.length < 4) {
+        return res.status(400).json({ error: "비밀번호는 최소 4자리 이상이어야 합니다." });
+    }
+
+    try {
+        // 현재 유저 정보 조회
+        const userRes = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+        const user = userRes.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: "사용자 정보를 찾을 수 없습니다." });
+        }
+
+        // 현재 비밀번호 일치 여부 검증
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: "현재 비밀번호가 일치하지 않습니다." });
+        }
+
+        // 새 비밀번호 해시화 및 DB 업데이트
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await pool.query(
+            "UPDATE users SET password = $1 WHERE username = $2",
+            [hashedNewPassword, username]
+        );
+
+        res.json({ success: true, message: "비밀번호가 성공적으로 변경되었습니다!" });
+    } catch (err) {
+        console.error("비밀번호 변경 에러:", err);
+        res.status(500).json({ error: "비밀번호 변경 처리 중 오류가 발생했습니다." });
+    }
+});
+
 // 지점 목록 조회 API
 app.get("/api/locations", async (req, res) => {
     if (!req.session.user) {
@@ -549,6 +599,62 @@ app.get("/api/history", async (req, res) => {
     } catch (err) {
         console.error("이력 조회 에러:", err);
         res.status(500).json({ error: "이력 조회 실패" });
+    }
+});
+
+//  전체 이력 검색 API (지점/카테고리/검색어 필터 지원)
+app.get("/api/history/search/all", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+
+    const { location, category, search } = req.query;
+
+    try {
+        let query = `
+            SELECT
+                l.name AS location_name,
+                i.category,
+                i.vendor,
+                i.spec,
+                sl.type,
+                sl.change_qty,
+                sl.result_qty,
+                sl.updated_by,
+                sl.created_at AS updated_at
+            FROM stock_logs sl
+            JOIN items i ON sl.item_id = i.id
+            JOIN locations l ON sl.location_id = l.id
+            WHERE sl.type IN ('사용', '반납') 
+        `;
+
+        const params = [];
+
+        // 1) 지점 필터
+        if (location && location !== 'ALL') {
+            params.push(location);
+            query += ` AND l.name = $${params.length}`;
+        }
+
+        // 2) 카테고리 필터
+        if (category && category !== 'ALL') {
+            params.push(category);
+            query += ` AND i.category = $${params.length}`;
+        }
+
+        // 3) 스펙/제조사 검색어 필터
+        if (search && search.trim() !== '') {
+            params.push(`%${search.trim()}%`);
+            query += ` AND (i.spec ILIKE $${params.length} OR i.vendor ILIKE $${params.length})`;
+        }
+
+        query += ` ORDER BY sl.created_at DESC LIMIT 500;`; // 최대 500건까지 조회
+
+        const result = await pool.query(query, params);
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        console.error("전체 이력 검색 에러:", err);
+        res.status(500).json({ error: "전체 이력 조회 실패" });
     }
 });
 
