@@ -31,8 +31,6 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 
 ---
 
----
-
 ## 🛠️ Tech Stack
 
 - **Backend:** Node.js (Express)
@@ -87,6 +85,18 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 - Dedicated modal for searching all stock change history across locations, with filters by location, category, and free-text search on spec/vendor
 - Paginated results (25 per page) for large history sets
 
+### 11. Monthly Inspection Reminder
+- Dashboard shows a dismissible warning banner when any location hasn't completed this month's inspection past the 25th
+- Pulls live status from the same `/api/inspections/status` data used by the inspection table, so no extra API calls needed
+
+### 12. Inspection Completion Cancel Tracking
+- Admins can toggle a completed inspection back to "incomplete" with a confirmation prompt
+- Cancellation is tracked (`canceled_by`, `canceled_at`) and surfaced in the status table, so it's clear who reopened an inspection and when
+
+### 13. Admin Activity Log
+- All admin-only actions (adding/deleting asset items) are recorded to a dedicated `admin_logs` table with actor, action type, and target detail
+- Accessible only to admins via a dropdown menu item, with a paginated modal (25 entries per page)
+
 ---
 
 ## 📐 Database Schema (Summary)
@@ -97,10 +107,9 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 | `locations` | Data center (IDC) location info |
 | `items` | Asset categories, manufacturers, specs |
 | `stock` | Per-location stock quantities (composite key: `location_id`, `item_id`) |
-| `stock_logs` | History of all stock changes (check-in/out, inspections) |
-| `monthly_inspections` | Per-location monthly inspection completion status and owner |
 | `stock_logs` | History of all stock changes (check-in/out, transfers, inspections), including requester for check-in/out/transfer |
-
+| `monthly_inspections` | Per-location monthly inspection completion status, completion/cancellation actor and timestamp |
+| `admin_logs` | Audit trail of admin-only actions (asset add/delete) with actor, action type, and target |
 ---
 
 ## 🚀 Getting Started
