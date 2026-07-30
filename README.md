@@ -11,6 +11,9 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 ### DC-wise Stock Status
 ![DC-wise Stock Status](./docs/DAM4.png)
 
+### Inter-Location Stock Transfer
+![Inter-Location Stock Transfer](./docs/DAM7.png)
+
 ### Monthly Batch Inspection
 ![Monthly Batch Inspection](./docs/DAM3.png)
 
@@ -64,13 +67,25 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 - Admin-only actions (adding or deleting asset items) are protected server-side by a `checkAdmin` middleware — not just hidden in the UI
 - The "Manage Asset Items" button is dynamically shown/hidden based on the logged-in user's role, fetched via `/api/me`
 
-### 6. Excel Export
-- Generates a downloadable `.xlsx` report of the current month's full inspection data across all locations, using the `xlsx` (SheetJS) library on the server
-- Report includes location, category, vendor, spec, quantity, last updated by/at for every asset item
+### 6. Inter-Location Stock Transfer
+- Added a "Transfer" option alongside Use/Return, allowing stock to move directly between IDC locations
+- Each transfer creates a paired log entry — `이전(출고)` (transfer-out) at the source and `이전(입고)` (transfer-in) at the destination — both within the same transaction for consistency
 
-### 7. Account Management
-- Users can change their own password from a dropdown menu under their username
+### 7. Requester Tracking
+- Use/Return/Transfer actions now require a requester name, stored alongside the operator (`updated_by`) for full accountability
+- Batch monthly inspections intentionally omit requester, since they reconcile overall stock counts rather than track individual requests
+
+### 8. Excel Export
+- Generates a downloadable `.xlsx` report of the current month's full inspection data across all locations, using the `xlsx` (SheetJS) library on the server
+- Open to all logged-in users (not admin-restricted) since it's meant for sharing inspection results across the team
+
+### 9. Account Management
+- Users can change their own password from a dropdown menu under their username, with current-password verification
 - Logout moved into the same dropdown for a cleaner header UI
+
+### 10. Full History Search
+- Dedicated modal for searching all stock change history across locations, with filters by location, category, and free-text search on spec/vendor
+- Paginated results (25 per page) for large history sets
 
 ---
 
@@ -84,6 +99,7 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 | `stock` | Per-location stock quantities (composite key: `location_id`, `item_id`) |
 | `stock_logs` | History of all stock changes (check-in/out, inspections) |
 | `monthly_inspections` | Per-location monthly inspection completion status and owner |
+| `stock_logs` | History of all stock changes (check-in/out, transfers, inspections), including requester for check-in/out/transfer |
 
 ---
 
