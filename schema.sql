@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict lXqMi4VHDVaY2H99QB7vR4ilOarPxxi8txFd1mJlFoxFyx5T1FgPMlI45Eeaa9S
 
 -- Dumped from database version 18.4 (Homebrew)
 -- Dumped by pg_dump version 18.4 (Homebrew)
@@ -166,7 +165,8 @@ CREATE TABLE public.stock_logs (
     change_qty integer NOT NULL,
     result_qty integer NOT NULL,
     updated_by character varying(50) NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    requester character varying(50)
 );
 
 
@@ -388,5 +388,4 @@ ALTER TABLE ONLY public.stock_logs
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lXqMi4VHDVaY2H99QB7vR4ilOarPxxi8txFd1mJlFoxFyx5T1FgPMlI45Eeaa9S
 

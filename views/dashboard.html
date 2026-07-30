@@ -263,6 +263,7 @@
                                     <th>변동 수량</th>
                                     <th>결과 수량</th>
                                     <th>작업자</th>
+                                    <th>요청자</th>
                                 </tr>
                             </thead>
                             <tbody id="allHistoryTableBody">
@@ -434,6 +435,9 @@
                         const typeBadgeClass = isUse ? 'bg-danger' : 'bg-primary';
                         const typeSign = isUse ? '-' : '+';
                         const vendorName = (log.vendor && log.vendor !== '공통') ? `${log.vendor} ` : '';
+                        const requesterBadge = log.requester 
+                            ? `<span class="badge bg-light text-dark border ms-1"><i class="bi bi-person-lines-fill me-1"></i>요청: ${log.requester}</span>` 
+                            : '';
 
                         html += `
                             <li class="list-group-item d-flex justify-content-between align-items-center p-3">
@@ -447,7 +451,8 @@
                                 </div>
                                 <div class="text-end">
                                     <small class="text-muted d-block">${date}</small>
-                                    <span class="badge bg-info text-dark bg-opacity-10 border border-info"><i class="bi bi-person-fill me-1"></i>${log.updated_by}</span>
+                                    <span class="badge bg-info text-dark bg-opacity-10 border border-info"><i class="bi bi-person-fill me-1"></i>작업: ${log.updated_by}</span>
+                                    ${requesterBadge}
                                 </div>
                             </li>
                         `;
@@ -704,7 +709,7 @@
             const totalPages = Math.ceil(totalCount / historyPageSize) || 1;
 
             if (totalCount === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-muted">조건에 일치하는 이력이 없습니다.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="py-4 text-muted">조건에 일치하는 이력이 없습니다.</td></tr>';
                 document.getElementById("historyPaginationInfo").textContent = "총 0건 (0 / 0 페이지)";
                 document.getElementById("historyPaginationList").innerHTML = "";
                 return;
@@ -739,6 +744,7 @@
                         <td class="fw-bold">${sign}${log.change_qty}개</td>
                         <td class="text-primary fw-bold">${log.result_qty}개</td>
                         <td><span class="fw-bold small">${log.updated_by}</span></td>
+                        <td><span class="fw-bold small text-primary">${log.requester || '-'}</span></td>
                     </tr>
                 `;
             });

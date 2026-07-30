@@ -310,13 +310,13 @@ app.delete("/api/items/:itemId", checkAdmin, async (req, res) => {
     }
 });
 
-// 수량 변경 (입출고) API
+// 수량 변경 (입출고 및 이전) API
 app.post("/api/stock/update", async (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ error: "로그인이 필요합니다." });
     }
 
-    const { location, itemId, type, changeQty } = req.body;
+    const { location, itemId, type, changeQty, requester, targetLocation } = req.body;
     const updatedBy = req.session.user;
     const numChange = parseInt(changeQty, 10);
 
@@ -324,55 +324,118 @@ app.post("/api/stock/update", async (req, res) => {
         return res.status(400).json({ error: "올바른 수량을 입력해주세요." });
     }
 
+    const formattedRequester = (requester && typeof requester === 'string' && requester.trim())
+        ? requester.trim()
+        : '미기재';
+
     const client = await pool.connect();
 
     try {
         await client.query('BEGIN');
 
+        // 출발지 IDC ID 조회
         const locRes = await client.query("SELECT id FROM locations WHERE name = $1", [location]);
         if (locRes.rows.length === 0) {
             throw new Error("존재하지 않는 IDC입니다.");
         }
         const locationId = locRes.rows[0].id;
 
+        // 출발지 현재 재고 조회
         const stockRes = await client.query(
             "SELECT quantity FROM stock WHERE location_id = $1 AND item_id = $2",
             [locationId, itemId]
         );
 
         let currentQty = stockRes.rows.length > 0 ? stockRes.rows[0].quantity : 0;
-        let newQty = currentQty;
 
         if (type === "사용") {
-            newQty = currentQty - numChange;
+            let newQty = currentQty - numChange;
             if (newQty < 0) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ error: `재고가 부족합니다. (현재 재고: ${currentQty}개)` });
             }
+
+            await client.query(`
+                INSERT INTO stock (location_id, item_id, quantity, updated_by, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (item_id, location_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_by = EXCLUDED.updated_by, updated_at = NOW();
+            `, [locationId, itemId, newQty, updatedBy]);
+
+            await client.query(`
+                INSERT INTO stock_logs (location_id, item_id, type, change_qty, result_qty, updated_by, requester)
+                VALUES ($1, $2, $3, $4, $5, $6, $7);
+            `, [locationId, itemId, type, numChange, newQty, updatedBy, formattedRequester]);
+
         } else if (type === "반납") {
-            newQty = currentQty + numChange;
+            let newQty = currentQty + numChange;
+
+            await client.query(`
+                INSERT INTO stock (location_id, item_id, quantity, updated_by, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (item_id, location_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_by = EXCLUDED.updated_by, updated_at = NOW();
+            `, [locationId, itemId, newQty, updatedBy]);
+
+            await client.query(`
+                INSERT INTO stock_logs (location_id, item_id, type, change_qty, result_qty, updated_by, requester)
+                VALUES ($1, $2, $3, $4, $5, $6, $7);
+            `, [locationId, itemId, type, numChange, newQty, updatedBy, formattedRequester]);
+
+        } else if (type === "이전") {
+            if (!targetLocation || targetLocation === location) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: "올바른 이전 대상 IDC를 선택해주세요." });
+            }
+
+            // 출발지 재고 부족 확인
+            let sourceNewQty = currentQty - numChange;
+            if (sourceNewQty < 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: `출발지 IDC 재고가 부족합니다. (현재 재고: ${currentQty}개)` });
+            }
+
+            // 목적지 IDC ID 및 현재 재고 조회
+            const targetLocRes = await client.query("SELECT id FROM locations WHERE name = $1", [targetLocation]);
+            if (targetLocRes.rows.length === 0) throw new Error("존재하지 않는 목적지 IDC입니다.");
+            const targetLocationId = targetLocRes.rows[0].id;
+
+            const targetStockRes = await client.query(
+                "SELECT quantity FROM stock WHERE location_id = $1 AND item_id = $2",
+                [targetLocationId, itemId]
+            );
+            let targetCurrentQty = targetStockRes.rows.length > 0 ? targetStockRes.rows[0].quantity : 0;
+            let targetNewQty = targetCurrentQty + numChange;
+
+            // 1) 출발지 IDC: 차감 및 '이전(출고)' 이력 저장
+            await client.query(`
+                INSERT INTO stock (location_id, item_id, quantity, updated_by, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (item_id, location_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_by = EXCLUDED.updated_by, updated_at = NOW();
+            `, [locationId, itemId, sourceNewQty, updatedBy]);
+
+            await client.query(`
+                INSERT INTO stock_logs (location_id, item_id, type, change_qty, result_qty, updated_by, requester)
+                VALUES ($1, $2, '이전(출고)', $3, $4, $5, $6);
+            `, [locationId, itemId, numChange, sourceNewQty, updatedBy, `${formattedRequester} (${targetLocation}으로 이동)`]);
+
+            // 2) 목적지 IDC: 증가 및 '이전(입고)' 이력 저장
+            await client.query(`
+                INSERT INTO stock (location_id, item_id, quantity, updated_by, updated_at)
+                VALUES ($1, $2, $3, $4, NOW())
+                ON CONFLICT (item_id, location_id) DO UPDATE SET quantity = EXCLUDED.quantity, updated_by = EXCLUDED.updated_by, updated_at = NOW();
+            `, [targetLocationId, itemId, targetNewQty, updatedBy]);
+
+            await client.query(`
+                INSERT INTO stock_logs (location_id, item_id, type, change_qty, result_qty, updated_by, requester)
+                VALUES ($1, $2, '이전(입고)', $3, $4, $5, $6);
+            `, [targetLocationId, itemId, numChange, targetNewQty, updatedBy, `${formattedRequester} (${location}에서 이동)`]);
+
         } else {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: "올바른 구분을 선택해주세요." });
         }
 
-        await client.query(`
-            INSERT INTO stock (location_id, item_id, quantity, updated_by, updated_at)
-            VALUES ($1, $2, $3, $4, NOW())
-            ON CONFLICT (item_id, location_id)
-            DO UPDATE SET
-                quantity = EXCLUDED.quantity,
-                updated_by = EXCLUDED.updated_by,
-                updated_at = NOW();
-        `, [locationId, itemId, newQty, updatedBy]);
-
-        await client.query(`
-            INSERT INTO stock_logs (location_id, item_id, type, change_qty, result_qty, updated_by)
-            VALUES ($1, $2, $3, $4, $5, $6);
-        `, [locationId, itemId, type, numChange, newQty, updatedBy]);
-
         await client.query('COMMIT');
-        res.json({ success: true, message: "입출고 처리가 완료되었습니다." });
+        res.json({ success: true, message: "처리가 완료되었습니다." });
 
     } catch (err) {
         await client.query('ROLLBACK');
@@ -421,12 +484,16 @@ app.get("/api/history/:locationName", async (req, res) => {
         const query = `
             SELECT
                 i.category, i.vendor, i.spec,
-                sl.type, sl.change_qty, sl.result_qty, sl.updated_by,
+                sl.type, 
+                sl.change_qty, 
+                sl.result_qty, 
+                sl.updated_by, 
+                sl.requester,
                 sl.created_at AS updated_at
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE l.name = $1 AND sl.type IN ('사용', '반납')
+            WHERE l.name = $1 AND sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사')
             ORDER BY sl.created_at DESC
             LIMIT 25;
         `;
@@ -659,11 +726,12 @@ app.get("/api/history", async (req, res) => {
                 sl.change_qty,
                 sl.result_qty,
                 sl.updated_by,
+                sl.requester,
                 sl.created_at AS updated_at
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE sl.type IN ('사용', '반납')
+            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사')
             ORDER BY sl.created_at DESC
             LIMIT 50;
         `;
@@ -695,11 +763,12 @@ app.get("/api/history/search/all", async (req, res) => {
                 sl.change_qty,
                 sl.result_qty,
                 sl.updated_by,
+                sl.requester,
                 sl.created_at AS updated_at
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE sl.type IN ('사용', '반납') 
+            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사') 
         `;
 
         const params = [];
