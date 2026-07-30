@@ -48,10 +48,11 @@ function checkAdmin(req, res, next) {
 
 // 관리자 활동 로그 저장 함수
 async function logAdminAction(adminUsername, actionType, target) {
+    const username = adminUsername || 'Admin';
     try {
         await pool.query(
             "INSERT INTO admin_logs (admin_username, action_type, target) VALUES ($1, $2, $3)",
-            [adminUsername, actionType, target]
+            [username, actionType, target]
         );
     } catch (err) {
         console.error("관리자 로그 저장 실패:", err);
@@ -320,6 +321,15 @@ app.post("/api/items", checkAdmin, async (req, res) => {
     }
 
     try {
+        const checkExist = await pool.query(
+            "SELECT id FROM items WHERE category = $1 AND vendor = $2 AND spec = $3",
+            [category.trim(), vendor.trim(), spec.trim()]
+        );
+
+        if (checkExist.rows.length > 0) {
+            return res.status(400).json({ error: "이미 동일한 자산 품목이 존재합니다." });
+        }
+        
         const result = await pool.query(
             "INSERT INTO items (category, vendor, spec) VALUES ($1, $2, $3) RETURNING *",
             [category.trim(), vendor.trim(), spec.trim()]
@@ -400,7 +410,7 @@ app.post("/api/stock/update", async (req, res) => {
 
         // 출발지 현재 재고 조회
         const stockRes = await client.query(
-            "SELECT quantity FROM stock WHERE location_id = $1 AND item_id = $2",
+            "SELECT quantity FROM stock WHERE location_id = $1 AND item_id = $2 FOR UPDATE",
             [locationId, itemId]
         );
 
@@ -551,7 +561,7 @@ app.get("/api/history/:locationName", async (req, res) => {
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE l.name = $1 AND sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사')
+            WHERE l.name = $1 AND sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)')
             ORDER BY sl.created_at DESC
             LIMIT 25;
         `;
@@ -803,7 +813,7 @@ app.get("/api/history", async (req, res) => {
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사')
+            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)')
             ORDER BY sl.created_at DESC
             LIMIT 50;
         `;
@@ -840,7 +850,7 @@ app.get("/api/history/search/all", async (req, res) => {
             FROM stock_logs sl
             JOIN items i ON sl.item_id = i.id
             JOIN locations l ON sl.location_id = l.id
-            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)', '실사') 
+            WHERE sl.type IN ('사용', '반납', '이전(출고)', '이전(입고)') 
         `;
 
         const params = [];
