@@ -36,6 +36,7 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 - **Database:** PostgreSQL (`pg` driver)
 - **Auth:** express-session, bcrypt (password hashing)
 - **Frontend:** HTML5, CSS3, Vanilla JavaScript
+- **Reporting:** xlsx (SheetJS) — server-side Excel export
 
 ---
 
@@ -62,6 +63,14 @@ Built to replace spreadsheet-based inventory tracking with a searchable, transac
 - `users.role` column distinguishes `admin` and `user` accounts, checked via session on every request
 - Admin-only actions (adding or deleting asset items) are protected server-side by a `checkAdmin` middleware — not just hidden in the UI
 - The "Manage Asset Items" button is dynamically shown/hidden based on the logged-in user's role, fetched via `/api/me`
+
+### 6. Excel Export
+- Generates a downloadable `.xlsx` report of the current month's full inspection data across all locations, using the `xlsx` (SheetJS) library on the server
+- Report includes location, category, vendor, spec, quantity, last updated by/at for every asset item
+
+### 7. Account Management
+- Users can change their own password from a dropdown menu under their username
+- Logout moved into the same dropdown for a cleaner header UI
 
 ---
 

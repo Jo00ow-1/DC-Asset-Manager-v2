@@ -32,6 +32,7 @@
 - **Database:** PostgreSQL (pg Driver)
 - **Authentication:** Express-Session, Bcrypt (비밀번호 암호화)
 - **Frontend:** HTML5, CSS3, JavaScript (Vanilla JS)
+- **Reporting:** xlsx (SheetJS) — 서버 기반 엑셀 내보내기 기능
 
 ---
 
@@ -58,6 +59,14 @@
 - `users` 테이블의 `role` 컬럼으로 `admin`/`user` 계정을 구분하고, 매 요청마다 세션 기준으로 검증
 - 자산 등록/삭제 같은 관리자 전용 기능은 화면에서만 숨기는 게 아니라 `checkAdmin` 미들웨어로 서버단에서도 차단
 - `/api/me`를 통해 로그인한 유저의 권한을 조회해 "자산 항목 관리" 버튼을 동적으로 노출/비노출
+
+### 6. 엑셀 내보내기
+- 서버에서 `xlsx`(SheetJS) 라이브러리를 이용해 이번 달 전체 지점의 실사 데이터를 `.xlsx` 파일로 다운로드
+- IDC 센터, 카테고리, 제조사, 스펙, 수량, 최종 수정자/일시까지 포함된 리포트 제공
+
+### 7. 계정 관리
+- 사용자명 드롭다운 메뉴에서 본인 비밀번호 변경 가능
+- 로그아웃 버튼도 같은 드롭다운으로 통합해 헤더 UI 정리
 
 ---
 
