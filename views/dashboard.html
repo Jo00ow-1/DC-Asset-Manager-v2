@@ -46,6 +46,15 @@
                     <span id="navUsername">사용자</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                    <li id="adminLogMenu" class="d-none">
+                        <button class="dropdown-item small fw-bold text-dark" data-bs-toggle="modal"
+                            data-bs-target="#adminLogModal" onclick="fetchAdminLogs()">
+                            <i class="bi bi-shield-lock me-2 text-warning"></i>관리자 활동 로그
+                        </button>
+                    </li>
+                    <li id="adminLogDivider" class="d-none">
+                        <hr class="dropdown-divider">
+                    </li>
                     <li>
                         <button class="dropdown-item small fw-bold text-secondary" data-bs-toggle="modal"
                             data-bs-target="#changePwModal">
@@ -66,6 +75,7 @@
     </nav>
 
     <div class="container my-5">
+        <div id="inspectionReminderBanner"></div>
         <div class="text-center mb-5">
             <h2 class="fw-bold text-dark"> IDC를 선택해주세요.</h2>
             <p class="text-muted">해당 센터의 카테고리별 자산 재고 조회 및 수정이 가능합니다.</p>
@@ -196,7 +206,8 @@
                 </div>
                 <div class="modal-footer bg-light" style="padding-right: 80px;">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                    <button type="button" class="btn btn-success fw-bold px-4" id="saveBatchInspectionBtn">💾 완료</button>
+                    <button type="button" class="btn btn-success fw-bold px-4" id="saveBatchInspectionBtn">💾
+                        완료</button>
                 </div>
             </div>
         </div>
@@ -291,6 +302,50 @@
         </div>
     </div>
 
+    <!-- 🌟 [추가] 관리자 활동 로그 모달 -->
+    <div class="modal fade" id="adminLogModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white py-2">
+                    <h5 class="modal-title fw-bold fs-6">
+                        <i class="bi bi-shield-shaded me-2 text-warning"></i>관리자 주요 활동 로그
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-center mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>일시</th>
+                                    <th>작업자</th>
+                                    <th>작업 구분</th>
+                                    <th>대상 자산 / 상세 내용</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminLogTableBody">
+                                <tr>
+                                    <td colspan="4" class="py-4 text-muted">로그를 불러오는 중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light border-top">
+                    <small class="text-muted" id="adminLogPaginationInfo">총 0건 (1 / 1 페이지)</small>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0" id="adminLogPaginationBtns">
+                            <!-- JS로 페이지 버튼 자동 생성 -->
+                        </ul>
+                    </nav>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 비밀번호 변경 모달 -->
     <div class="modal fade" id="changePwModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -376,16 +431,25 @@
 
                         result.data.forEach(item => {
                             const isDone = item.is_completed;
-                            const statusBadge = isDone
-                                ? '<span class="badge bg-success"><i class ="bi bi-check-circle me-1"></i>완료</span>'
-                                : '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>미완료</span>';
+                            let statusBadge = '';
+                            if (isDone) {
+                                statusBadge = '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>완료</span>';
+                            } else {
+                                if (item.canceled_by) {
+                                    const cancelDate = item.canceled_at ? new Date(item.canceled_at).toLocaleDateString('ko-KR') : '';
+                                    statusBadge = `<span class="badge bg-danger mb-1"><i class="bi bi-exclamation-triangle me-1"></i>미완료</span>` +
+                                        `<div class="text-danger" style="font-size: 0.75rem;">(취소: ${item.canceled_by} / ${cancelDate})</div>`;
+                                } else {
+                                    statusBadge = '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>미완료</span>';
+                                }
+                            }
 
-                            const dateStr = item.completed_at ? new Date(item.completed_at).toLocaleString('ko-KR') : '-';
-                            const userStr = item.completed_by ? item.completed_by : '-';
+                            const dateStr = (isDone && item.completed_at) ? new Date(item.completed_at).toLocaleString('ko-KR') : '-';
+                            const userStr = (isDone && item.completed_by) ? item.completed_by : '-';
 
                             const buttonHtml = isDone
                                 ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="openInspectionModal('${item.location_name}')">실사 재점검</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="toggleInspection(${item.location_id}, false)">완료 취소</button>`
+                                <button class="btn btn-sm btn-outline-danger" onclick="toggleInspection(${item.location_id}, false, '${item.location_name}')">완료 취소</button>`
                                 : `<button class="btn btn-sm btn-primary fw-bold" onclick="openInspectionModal('${item.location_name}')">📋 실사하기</button>`;
 
                             tbody.innerHTML += `
@@ -398,12 +462,19 @@
                                 </tr>
                             `;
                         });
+                        // 실사 리마인더 배너
+                        checkInspectionReminder(result.data);
                     }
                 })
                 .catch(err => console.error("실사 현황 로드 에러:", err));
         }
 
-        function toggleInspection(locationId, isCompleted) {
+        function toggleInspection(locationId, isCompleted, locationName) {
+            if (!isCompleted) {
+                const confirmCancel = confirm(`정말로 [${locationName} IDC]의 실사 완료를 취소하시겠습니까?\n취소 이력이 기록됩니다.`);
+                if (!confirmCancel) return;
+            }
+
             fetch("/api/inspections/toggle", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -435,8 +506,8 @@
                         const typeBadgeClass = isUse ? 'bg-danger' : 'bg-primary';
                         const typeSign = isUse ? '-' : '+';
                         const vendorName = (log.vendor && log.vendor !== '공통') ? `${log.vendor} ` : '';
-                        const requesterBadge = log.requester 
-                            ? `<span class="badge bg-light text-dark border ms-1"><i class="bi bi-person-lines-fill me-1"></i>요청: ${log.requester}</span>` 
+                        const requesterBadge = log.requester
+                            ? `<span class="badge bg-light text-dark border ms-1"><i class="bi bi-person-lines-fill me-1"></i>요청: ${log.requester}</span>`
                             : '';
 
                         html += `
@@ -598,6 +669,11 @@
                     const usernameEl = document.getElementById("navUsername");
                     if (usernameEl && data.username) {
                         usernameEl.textContent = data.username;
+                    }
+
+                    if (data.role === 'admin') {
+                        document.getElementById("adminLogMenu")?.classList.remove("d-none");
+                        document.getElementById("adminLogDivider")?.classList.remove("d-none");
                     }
                 }
             } catch (err) {
@@ -790,6 +866,103 @@
                 fetchFilteredHistory();
             }
         });
+
+        // 🌟 월간 실사 리마인더 체크 함수
+        function checkInspectionReminder(inspectionsData) {
+            const today = new Date();
+            const currentDay = today.getDate();
+            const cutoffDay = 25; // 매월 25일 이후부터 알림 표시 (테스트할 땐 1로 바꿔서 확인 가능)
+
+            // 미완료 지점 이름만 뽑아내기
+            const pendingLocations = inspectionsData
+                .filter(item => !item.is_completed)
+                .map(item => item.location_name);
+
+            const bannerEl = document.getElementById("inspectionReminderBanner");
+            if (!bannerEl) return;
+
+            if (currentDay >= cutoffDay && pendingLocations.length > 0) {
+                bannerEl.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show fw-bold shadow-sm mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>
+                이번 달 정기 실사 미완료 지점: 
+                <span class="text-danger fw-bold">${pendingLocations.join(", ")}</span> (${pendingLocations.length}곳)
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+            } else {
+                bannerEl.innerHTML = "";
+            }
+        }
+
+        // 🌟 [수정] 관리자 활동 로그 불러오기 (페이지네이션 지원)
+        async function fetchAdminLogs(page = 1) {
+            const tbody = document.getElementById("adminLogTableBody");
+            const infoEl = document.getElementById("adminLogPaginationInfo");
+            const btnsEl = document.getElementById("adminLogPaginationBtns");
+
+            tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>로딩 중...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/admin/logs?page=${page}`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    let html = '';
+                    result.data.forEach(log => {
+                        const date = new Date(log.created_at).toLocaleString('ko-KR');
+                        
+                        let badgeClass = 'bg-secondary';
+                        if (log.action_type === '자산 추가') badgeClass = 'bg-success';
+                        else if (log.action_type === '자산 삭제') badgeClass = 'bg-danger';
+
+                        html += `
+                            <tr>
+                                <td class="small text-muted text-nowrap">${date}</td>
+                                <td><span class="fw-bold">${log.admin_username}</span></td>
+                                <td><span class="badge ${badgeClass}">${log.action_type}</span></td>
+                                <td class="text-start ps-3 fw-bold text-dark">${log.target}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+
+                    // 페이지 정보 텍스트
+                    const { currentPage, totalPages, totalCount } = result.pagination;
+                    infoEl.textContent = `총 ${totalCount.toLocaleString()}건 (${currentPage} / ${totalPages} 페이지)`;
+
+                    // 페이지네이션 버튼 그리기
+                    let pageBtnsHtml = '';
+                    
+                    // 이전 버튼
+                    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+                    pageBtnsHtml += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" onclick="fetchAdminLogs(${currentPage - 1}); return false;">이전</a></li>`;
+
+                    // 페이지 번호 버튼 (최대 5개씩 표출)
+                    const startPage = Math.max(1, currentPage - 2);
+                    const endPage = Math.min(totalPages, startPage + 4);
+
+                    for (let p = startPage; p <= endPage; p++) {
+                        const active = p === currentPage ? 'active' : '';
+                        pageBtnsHtml += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="fetchAdminLogs(${p}); return false;">${p}</a></li>`;
+                    }
+
+                    // 다음 버튼
+                    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+                    pageBtnsHtml += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" onclick="fetchAdminLogs(${currentPage + 1}); return false;">다음</a></li>`;
+
+                    btnsEl.innerHTML = pageBtnsHtml;
+
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-muted">기록된 관리자 활동 로그가 없습니다.</td></tr>';
+                    infoEl.textContent = '총 0건';
+                    btnsEl.innerHTML = '';
+                }
+            } catch (err) {
+                console.error("관리자 로그 조회 에러:", err);
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-danger">로그를 불러오는 중 오류가 발생했습니다.</td></tr>';
+            }
+        }
     </script>
 </body>
 

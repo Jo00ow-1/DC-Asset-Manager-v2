@@ -23,6 +23,39 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: admin_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_logs (
+    id integer NOT NULL,
+    admin_username character varying(50) NOT NULL,
+    action_type character varying(50) NOT NULL,
+    target character varying(100),
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+--
+-- Name: admin_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.admin_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: admin_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.admin_logs_id_seq OWNED BY public.admin_logs.id;
+
+
+--
 -- Name: items; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -95,7 +128,9 @@ CREATE TABLE public.monthly_inspections (
     location_id integer,
     is_completed boolean DEFAULT false,
     completed_by character varying(50),
-    completed_at timestamp without time zone
+    completed_at timestamp without time zone,
+    canceled_by character varying(50),
+    canceled_at timestamp without time zone
 );
 
 
@@ -223,6 +258,13 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: admin_logs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_logs ALTER COLUMN id SET DEFAULT nextval('public.admin_logs_id_seq'::regclass);
+
+
+--
 -- Name: items id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -262,6 +304,14 @@ ALTER TABLE ONLY public.stock_logs ALTER COLUMN id SET DEFAULT nextval('public.s
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+
+
+--
+-- Name: admin_logs admin_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_logs
+    ADD CONSTRAINT admin_logs_pkey PRIMARY KEY (id);
 
 
 --

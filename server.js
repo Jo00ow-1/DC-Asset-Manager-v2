@@ -46,6 +46,50 @@ function checkAdmin(req, res, next) {
     next();
 }
 
+// 관리자 활동 로그 저장 함수
+async function logAdminAction(adminUsername, actionType, target) {
+    try {
+        await pool.query(
+            "INSERT INTO admin_logs (admin_username, action_type, target) VALUES ($1, $2, $3)",
+            [adminUsername, actionType, target]
+        );
+    } catch (err) {
+        console.error("관리자 로그 저장 실패:", err);
+    }
+}
+// 관리자 로그 조회 API (페이지네이션 적용: 페이지당 25건)
+app.get("/api/admin/logs", checkAdmin, async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 25;
+    const offset = (page - 1) * limit;
+
+    try {
+        // 전체 로그 개수 조회
+        const countResult = await pool.query("SELECT COUNT(*) FROM admin_logs");
+        const totalCount = parseInt(countResult.rows[0].count);
+        const totalPages = Math.ceil(totalCount / limit) || 1;
+
+        // 해당 페이지 25건 조회
+        const logResult = await pool.query(
+            "SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            [limit, offset]
+        );
+
+        res.json({
+            success: true,
+            data: logResult.rows,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalCount: totalCount
+            }
+        });
+    } catch (err) {
+        console.error("관리자 로그 조회 에러:", err);
+        res.status(500).json({ error: "로그 조회 실패" });
+    }
+});
+
 // 로그인 유저 정보 및 권한 조회 API (버튼 노출)
 app.get("/api/me", (req, res) => {
     if (!req.session.user) {
@@ -280,6 +324,7 @@ app.post("/api/items", checkAdmin, async (req, res) => {
             "INSERT INTO items (category, vendor, spec) VALUES ($1, $2, $3) RETURNING *",
             [category.trim(), vendor.trim(), spec.trim()]
         );
+        await logAdminAction(req.session.user, '자산 추가', `${category} - ${vendor} (${spec})`);
         res.json({ success: true, message: "신규 자산이 등록되었습니다.", item: result.rows[0] });
     } catch (err) {
         console.error("자산 등록 에러", err);
@@ -294,12 +339,25 @@ app.delete("/api/items/:itemId", checkAdmin, async (req, res) => {
 
     try {
         await client.query('BEGIN');
+
+        // 🌟 [추가] 삭제하기 전에 대상 자산 정보(카테고리, 제조사, 스펙)를 먼저 읽어옴!
+        const itemRes = await client.query("SELECT category, vendor, spec FROM items WHERE id = $1", [itemId]);
+        let itemDetail = `Item ID: ${itemId}`;
+        if (itemRes.rows.length > 0) {
+            const { category, vendor, spec } = itemRes.rows[0];
+            itemDetail = `${category} - ${vendor} (${spec})`;
+        }
+
         // 관련 재고 및 로그 삭제 후 items 삭제
         await client.query("DELETE FROM stock_logs WHERE item_id = $1", [itemId]);
         await client.query("DELETE FROM stock WHERE item_id = $1", [itemId]);
         await client.query("DELETE FROM items WHERE id = $1", [itemId]);
 
         await client.query('COMMIT');
+
+        // 🌟 [수정] ID 대신 조회해둔 명확한 자산 스펙으로 로그 남기기!
+        await logAdminAction(req.session.user, '자산 삭제', itemDetail);
+
         res.json({ success: true, message: "자산이 삭제되었습니다." });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -521,7 +579,9 @@ app.get("/api/inspections/status", async (req, res) => {
                 l.name AS location_name,
                 COALESCE(mi.is_completed, false) AS is_completed,
                 mi.completed_by,
-                mi.completed_at
+                mi.completed_at,
+                mi.canceled_by,
+                mi.canceled_at
             FROM locations l
             LEFT JOIN monthly_inspections mi 
                 ON l.id = mi.location_id AND mi.year_month = $1
@@ -548,13 +608,25 @@ app.post("/api/inspections/toggle", async (req, res) => {
 
     try {
         const query = `
-            INSERT INTO monthly_inspections (year_month, location_id, is_completed, completed_by, completed_at)
-            VALUES ($1, $2, $3, $4, NOW())
+            INSERT INTO monthly_inspections (
+                year_month, location_id, is_completed, 
+                completed_by, completed_at, 
+                canceled_by, canceled_at
+            )
+            VALUES (
+                $1, $2, $3, 
+                CASE WHEN $3 = true THEN $4 ELSE NULL END, 
+                CASE WHEN $3 = true THEN NOW() ELSE NULL END,
+                CASE WHEN $3 = false THEN $4 ELSE NULL END,
+                CASE WHEN $3 = false THEN NOW() ELSE NULL END
+            )
             ON CONFLICT (year_month, location_id)
             DO UPDATE SET
                 is_completed = EXCLUDED.is_completed,
-                completed_by = CASE WHEN EXCLUDED.is_completed THEN $4 ELSE NULL END,
-                completed_at = CASE WHEN EXCLUDED.is_completed THEN NOW() ELSE NULL END;
+                completed_by = CASE WHEN EXCLUDED.is_completed = true THEN $4 ELSE NULL END,
+                completed_at = CASE WHEN EXCLUDED.is_completed = true THEN NOW() ELSE NULL END,
+                canceled_by  = CASE WHEN EXCLUDED.is_completed = false THEN $4 ELSE monthly_inspections.canceled_by END,
+                canceled_at  = CASE WHEN EXCLUDED.is_completed = false THEN NOW() ELSE monthly_inspections.canceled_at END;
         `;
         await pool.query(query, [currentYearMonth, locationId, isCompleted, completedBy]);
         res.json({ success: true });
