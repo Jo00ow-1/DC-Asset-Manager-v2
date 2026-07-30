@@ -4,6 +4,7 @@ const app = express();
 const session = require('express-session');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
+const XLSX = require('xlsx');
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -565,6 +566,79 @@ app.post("/api/inspections/batch-update", async (req, res) => {
         res.status(500).json({ error: "실사 저장 실패" });
     } finally {
         client.release();
+    }
+});
+
+// 🌟 이번 달 전체 지점 월간 실사 결과 엑셀 다운로드 API
+app.get("/api/inspections/export-excel", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+    }
+
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    try {
+        // 모든 지점의 모든 자산 품목과 현재 재고 및 최근 업데이트 일시 조회
+        const query = `
+            SELECT
+                l.name AS location_name,
+                i.category,
+                i.vendor,
+                i.spec,
+                COALESCE(s.quantity, 0) AS quantity,
+                s.updated_by,
+                s.updated_at
+            FROM locations l
+            CROSS JOIN items i
+            LEFT JOIN stock s ON l.id = s.location_id AND i.id = s.item_id
+            ORDER BY l.id ASC, i.category ASC, i.vendor ASC, i.id ASC;
+        `;
+
+        const result = await pool.query(query);
+
+        // 엑셀에 들어갈 데이터 가공
+        const excelData = result.rows.map(row => {
+            const dateStr = row.updated_at ? new Date(row.updated_at).toLocaleString('ko-KR') : '기록 없음';
+            return {
+                "IDC 센터": row.location_name,
+                "카테고리": row.category,
+                "제조사(Vendor)": row.vendor,
+                "품명 및 스펙": row.spec,
+                "실사 수량": row.quantity,
+                "최종 수정자": row.updated_by || '-',
+                "최종 수정일시": dateStr
+            };
+        });
+
+        // 엑셀 워크북 생성
+        const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+        // 열 너비 예쁘게 자동 조정
+        worksheet['!cols'] = [
+            { wch: 12 }, // IDC 센터
+            { wch: 15 }, // 카테고리
+            { wch: 18 }, // 제조사
+            { wch: 30 }, // 스펙
+            { wch: 12 }, // 수량
+            { wch: 15 }, // 최종 수정자
+            { wch: 22 }  // 최종 수정일시
+        ];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, `${currentYearMonth} 실사현황`);
+
+        // 버퍼 생성 및 응답 파일 전송
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+        const fileName = encodeURIComponent(`DC_Asset_Inspection_${currentYearMonth}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"; filename*=UTF-8''${fileName}`);
+        res.send(buffer);
+
+    } catch (err) {
+        console.error("엑셀 출력 에러:", err);
+        res.status(500).json({ error: "엑셀 다운로드에 실패했습니다." });
     }
 });
 

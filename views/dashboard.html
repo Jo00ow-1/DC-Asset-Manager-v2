@@ -31,18 +31,36 @@
 </head>
 
 <body>
-    <!-- 🌟 네비바 정돈: 우측에 비밀번호 변경 + 로그아웃 나란히 배치 -->
+    <!-- 네비바 유저명 드롭다운 메뉴 -->
     <nav class="navbar navbar-dark main-navbar sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/dashboard">
                 <i class="bi bi-box-seam me-2"></i>DC Asset Manager
             </a>
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-light btn-sm fw-bold" data-bs-toggle="modal"
-                    data-bs-target="#changePwModal">
-                    <i class="bi bi-key-fill me-1"></i>비밀번호 변경
+
+            <!-- 드롭다운 영역 -->
+            <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm fw-bold dropdown-toggle d-flex align-items-center gap-1"
+                    type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle fs-6 me-1"></i>
+                    <span id="navUsername">사용자</span>
                 </button>
-                <a href="/logout" class="btn btn-outline-danger btn-sm fw-bold">로그아웃</a>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                    <li>
+                        <button class="dropdown-item small fw-bold text-secondary" data-bs-toggle="modal"
+                            data-bs-target="#changePwModal">
+                            <i class="bi bi-key-fill me-2 text-primary"></i>비밀번호 변경
+                        </button>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <a class="dropdown-item small fw-bold text-danger" href="/logout">
+                            <i class="bi bi-box-arrow-right me-2"></i>로그아웃
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
@@ -57,6 +75,7 @@
         <div class="row g-4 justify-content-center mb-5" id="locationCards"></div>
 
         <hr class="my-5">
+
         <!-- 월간 실사 현황 카드 -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
@@ -64,7 +83,13 @@
                     <i class="bi bi-clipboard-check me-2 text-primary"></i>
                     <span id="inspectionTitle">정기 자산 실사 현황</span>
                 </h5>
-                <small class="text-muted">매월 1일 자동 갱신</small>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- 엑셀 다운로드 버튼 -->
+                    <button class="btn btn-sm btn-outline-success fw-bold" onclick="downloadInspectionExcel()">
+                        <i class="bi bi-file-earmark-excel me-1"></i>실사 결과 엑셀 다운로드
+                    </button>
+                    <small class="text-muted border-start ps-2">매월 1일 자동 갱신</small>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -88,9 +113,11 @@
             </div>
         </div>
 
+        <!-- 최근 자산 입출고 기록 카드 -->
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history me-2 text-secondary"></i>최근 자산 입출고 기록
+                <h5 class="mb-0 fw-bold text-dark">
+                    <i class="bi bi-clock-history me-2 text-secondary"></i>최근 자산 입출고 기록
                 </h5>
                 <!-- 전체 이력 모달 버튼 -->
                 <button class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal"
@@ -169,8 +196,7 @@
                 </div>
                 <div class="modal-footer bg-light" style="padding-right: 80px;">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                    <button type="button" class="btn btn-success fw-bold px-4" id="saveBatchInspectionBtn">💾
-                        완료</button>
+                    <button type="button" class="btn btn-success fw-bold px-4" id="saveBatchInspectionBtn">💾 완료</button>
                 </div>
             </div>
         </div>
@@ -247,7 +273,7 @@
                         </table>
                     </div>
 
-                    <!-- 이력 테이블 아래에 페이지네이션 버튼 영역 추가 -->
+                    <!-- 이력 테이블 아래 페이지네이션 영역 -->
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
                         <small class="text-muted" id="historyPaginationInfo">총 0건 (1 / 1 페이지)</small>
                         <nav>
@@ -362,14 +388,14 @@
                                 : `<button class="btn btn-sm btn-primary fw-bold" onclick="openInspectionModal('${item.location_name}')">📋 실사하기</button>`;
 
                             tbody.innerHTML += `
-                        <tr>
-                            <td class="fw-bold">${item.location_name} IDC</td>
-                            <td>${statusBadge}</td>
-                            <td class="text-muted small">${dateStr}</td>
-                            <td class="fw-bold">${userStr}</td>
-                            <td>${buttonHtml}</td>
-                        </tr>
-                    `;
+                                <tr>
+                                    <td class="fw-bold">${item.location_name} IDC</td>
+                                    <td>${statusBadge}</td>
+                                    <td class="text-muted small">${dateStr}</td>
+                                    <td class="fw-bold">${userStr}</td>
+                                    <td>${buttonHtml}</td>
+                                </tr>
+                            `;
                         });
                     }
                 })
@@ -425,7 +451,6 @@
                                 </div>
                             </li>
                         `;
-
                     });
 
                     html += '</ul>';
@@ -497,20 +522,20 @@
                         const savedQty = batchStore[item.item_id] ? batchStore[item.item_id].newQty : item.quantity;
 
                         tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold text-secondary">${item.vendor}</td>
-                        <td>${item.spec}</td>
-                        <td><span class="badge bg-light text-dark border">${item.quantity} 개</span></td>
-                        <td>
-                            <input type="number" class="form-control form-control-sm text-center mx-auto fw-bold" 
-                                style="width: 100px;"
-                                value="${savedQty}"
-                                min="0"
-                                onchange="updateBatchStore(${item.item_id}, ${item.quantity}, this.value)"
-                            />
-                        </td>
-                    </tr>
-                `;
+                            <tr>
+                                <td class="fw-bold text-secondary">${item.vendor}</td>
+                                <td>${item.spec}</td>
+                                <td><span class="badge bg-light text-dark border">${item.quantity} 개</span></td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm text-center mx-auto fw-bold" 
+                                        style="width: 100px;"
+                                        value="${savedQty}"
+                                        min="0"
+                                        onchange="updateBatchStore(${item.item_id}, ${item.quantity}, this.value)"
+                                    />
+                                </td>
+                            </tr>
+                        `;
                     });
                 } else {
                     tbody.innerHTML = '<tr><td colspan="4" class="py-3 text-muted">등록된 자산이 없습니다.</td></tr>';
@@ -559,6 +584,24 @@
             }
         });
 
+        // 🌟 로그인 유저명 불러와서 네비바 드롭다운에 채우기
+        async function fetchCurrentUserInfo() {
+            try {
+                const res = await fetch("/api/me");
+                if (res.ok) {
+                    const data = await res.json();
+                    const usernameEl = document.getElementById("navUsername");
+                    if (usernameEl && data.username) {
+                        usernameEl.textContent = data.username;
+                    }
+                }
+            } catch (err) {
+                console.error("유저 정보 로드 실패:", err);
+            }
+        }
+
+        fetchCurrentUserInfo();
+
         // 비밀번호 변경 모달 오픈 시 초기화
         const changePwModalEl = document.getElementById('changePwModal');
         if (changePwModalEl) {
@@ -570,6 +613,11 @@
                     errorAlert.classList.add('d-none');
                 }
             });
+        }
+
+        // 🌟 실사 결과 엑셀 다운로드 함수
+        function downloadInspectionExcel() {
+            window.location.href = "/api/inspections/export-excel";
         }
 
         // 비밀번호 변경 제출 버튼 클릭
@@ -607,18 +655,17 @@
         });
 
         // 전체 이력 모달 불러오기 & 필터 조회 로직
-        let rawHistoryData = []; // API에서 받아온 전체 검색 결과
+        let rawHistoryData = [];
         let currentHistoryPage = 1;
-        const historyPageSize = 25; // 한 페이지당 25개씩 끊기
+        const historyPageSize = 25;
+
         function loadAllHistoryModal() {
-            // 초기화 후 전체 검색 실행
             document.getElementById("historyFilterLocation").value = "ALL";
             document.getElementById("historyFilterCategory").value = "ALL";
             document.getElementById("historyFilterSearch").value = "";
             fetchFilteredHistory();
         }
 
-        //  1) API 데이터 가져오기 (결과를 변수에 저장 후 1페이지 렌더링)
         async function fetchFilteredHistory() {
             const loc = document.getElementById("historyFilterLocation").value;
             const cat = document.getElementById("historyFilterCategory").value;
@@ -639,7 +686,7 @@
 
                 if (result.success) {
                     rawHistoryData = result.data || [];
-                    currentHistoryPage = 1; // 검색할 때마다 1페이지로 리셋
+                    currentHistoryPage = 1;
                     renderHistoryPage(currentHistoryPage);
                 } else {
                     tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-danger">이력을 불러오지 못했습니다.</td></tr>';
@@ -650,7 +697,6 @@
             }
         }
 
-        //  2) 지정한 페이지(25개)만 화면에 표로 그려주는 함수
         function renderHistoryPage(page) {
             currentHistoryPage = page;
             const tbody = document.getElementById("allHistoryTableBody");
@@ -664,7 +710,6 @@
                 return;
             }
 
-            // 25개씩 데이터 슬라이싱
             const startIndex = (page - 1) * historyPageSize;
             const pageData = rawHistoryData.slice(startIndex, startIndex + historyPageSize);
 
@@ -685,36 +730,32 @@
                 const vendorStr = (log.vendor && log.vendor !== '공통') ? `[${log.vendor}] ` : '';
 
                 html += `
-            <tr>
-                <td class="small text-muted">${date}</td>
-                <td><span class="badge bg-secondary">${log.location_name}</span></td>
-                <td><span class="badge bg-light text-dark border">${log.category}</span></td>
-                <td class="fw-bold text-start ps-3">${vendorStr}${log.spec}</td>
-                <td><span class="badge ${badgeClass}">${log.type}</span></td>
-                <td class="fw-bold">${sign}${log.change_qty}개</td>
-                <td class="text-primary fw-bold">${log.result_qty}개</td>
-                <td><span class="fw-bold small">${log.updated_by}</span></td>
-            </tr>
-        `;
+                    <tr>
+                        <td class="small text-muted">${date}</td>
+                        <td><span class="badge bg-secondary">${log.location_name}</span></td>
+                        <td><span class="badge bg-light text-dark border">${log.category}</span></td>
+                        <td class="fw-bold text-start ps-3">${vendorStr}${log.spec}</td>
+                        <td><span class="badge ${badgeClass}">${log.type}</span></td>
+                        <td class="fw-bold">${sign}${log.change_qty}개</td>
+                        <td class="text-primary fw-bold">${log.result_qty}개</td>
+                        <td><span class="fw-bold small">${log.updated_by}</span></td>
+                    </tr>
+                `;
             });
 
             tbody.innerHTML = html;
 
-            // 하단 카운트 정보 및 페이지네이션 버튼 갱신
             document.getElementById("historyPaginationInfo").textContent = `총 ${totalCount}건 (${page} / ${totalPages} 페이지)`;
             renderHistoryPaginationControls(totalPages, page);
         }
 
-        //  3) 하단 페이지 버튼([이전] 1 2 3 [다음]) 생성 로직
         function renderHistoryPaginationControls(totalPages, currentPage) {
             const navList = document.getElementById("historyPaginationList");
             let html = '';
 
-            // [이전] 버튼
             const prevDisabled = currentPage === 1 ? 'disabled' : '';
             html += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" onclick="changeHistoryPage(${currentPage - 1}); return false;">이전</a></li>`;
 
-            // 페이지 번호 버튼 (최대 5개씩 노출)
             let startPage = Math.max(1, currentPage - 2);
             let endPage = Math.min(totalPages, startPage + 4);
             if (endPage - startPage < 4) {
@@ -726,21 +767,18 @@
                 html += `<li class="page-item ${activeClass}"><a class="page-link" href="#" onclick="changeHistoryPage(${i}); return false;">${i}</a></li>`;
             }
 
-            // [다음] 버튼
             const nextDisabled = currentPage === totalPages ? 'disabled' : '';
             html += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" onclick="changeHistoryPage(${currentPage + 1}); return false;">다음</a></li>`;
 
             navList.innerHTML = html;
         }
 
-        //  4) 페이지 이동 함수
         function changeHistoryPage(newPage) {
             const totalPages = Math.ceil(rawHistoryData.length / historyPageSize) || 1;
             if (newPage < 1 || newPage > totalPages) return;
             renderHistoryPage(newPage);
         }
 
-        // 검색창에서 엔터 쳤을 때도 조회되도록 이벤트 걸기
         document.getElementById("historyFilterSearch")?.addEventListener("keyup", (e) => {
             if (e.key === "Enter") {
                 fetchFilteredHistory();
