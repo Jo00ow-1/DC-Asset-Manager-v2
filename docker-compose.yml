@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. PostgreSQL DB 컨테이너
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: dc_asset_db
     restart: always
     env_file:
@@ -15,8 +15,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql:ro 
+      - pgdata:/var/lib/postgresql
+      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
     depends_on: []
 
   # 2. Express 웹 앱 컨테이너
